@@ -87,6 +87,9 @@
     <ClInclude Include="Utils\Logger.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\IniManager.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -129,6 +132,9 @@
       <Filter>DataTypes</Filter>
     </ClCompile>
     <ClCompile Include="Utils\Logger.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\IniManager.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

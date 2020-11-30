@@ -16,6 +16,7 @@ __time64_t CalcTimestampMilli(SYSTEMTIME systime);
 SYSTEMTIME AddTime(const SYSTEMTIME& systime, int field, int num);
 
 std::string GetTempPath(const std::string& filepath);
+std::string GetRelativePath(const char* path);
 
 char* safe_strcpy(char* dst, const char* src, unsigned int max_length);
 

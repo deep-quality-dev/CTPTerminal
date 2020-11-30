@@ -121,6 +121,16 @@ std::string GetTempPath(const std::string &filepath)
 	return str.substr(0, str.find_last_of('\\') + 1) + filepath;
 }
 
+std::string GetRelativePath(const char* path)
+{
+	char szFull[MAX_PATH], szDrv[_MAX_DRIVE], szPath[MAX_PATH];
+	GetModuleFileNameA(NULL, szFull, MAX_PATH);
+	_splitpath_s(szFull, szDrv, _MAX_DRIVE, szPath, MAX_PATH, NULL, 0, NULL, 0);
+	_makepath_s(szFull, MAX_PATH, szDrv, szPath, NULL, NULL);
+	
+	return std::string(szFull) + path;
+}
+
 char* safe_strcpy(char* dst, const char* src, unsigned int max_length)
 {
 	size_t len = strlen(src);
