@@ -2,6 +2,7 @@
 
 #include "DataTypes/DataTypeDefs.h"
 #include <map>
+#include <set>
 
 class CDataCenter
 {

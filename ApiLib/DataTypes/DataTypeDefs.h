@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Utils/Fault.h"
 #include "ThostApi/ThostFtdcUserApiStruct.h"
 #include <string>
 #include <vector>

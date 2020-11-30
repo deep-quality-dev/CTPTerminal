@@ -90,12 +90,12 @@
     <ClInclude Include="Utils\IniManager.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\log4z.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="WorkerThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ThostMdApiWrapper.cpp">
@@ -135,6 +135,9 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="Utils\IniManager.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\log4z.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

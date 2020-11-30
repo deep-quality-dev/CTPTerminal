@@ -16,7 +16,7 @@ public:
 	const int MaxConnectTimeout = 10000;
 	const int MaxRequestTimeout = 10000;
 
-	virtual void OnProcessMsg(std::shared_ptr<CThostSpiMessage> msg);
+	virtual void OnProcessMsg(CThostSpiMessage* msg);
 	virtual void OnTimer(int timer_id);
 
 	virtual void Initialize(const std::string& broker_id,
@@ -36,15 +36,15 @@ public:
 
 
 protected:
-	void OnRspUserLogin(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspUserLogout(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspQryOrder(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspQryTrade(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspQryInvestorPosition(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspQryTradingAccount(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspQryInstrument(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspQryDepthMarketData(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspQryInvestorPositionDetail(std::shared_ptr<CThostSpiMessage> msg);
+	void OnRspUserLogin(CThostSpiMessage* msg);
+	void OnRspUserLogout(CThostSpiMessage* msg);
+	void OnRspQryOrder(CThostSpiMessage* msg);
+	void OnRspQryTrade(CThostSpiMessage* msg);
+	void OnRspQryInvestorPosition(CThostSpiMessage* msg);
+	void OnRspQryTradingAccount(CThostSpiMessage* msg);
+	void OnRspQryInstrument(CThostSpiMessage* msg);
+	void OnRspQryDepthMarketData(CThostSpiMessage* msg);
+	void OnRspQryInvestorPositionDetail(CThostSpiMessage* msg);
 
 private:
 	CThostFtdcTraderApi* trader_api_;

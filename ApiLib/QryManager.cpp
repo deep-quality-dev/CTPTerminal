@@ -51,7 +51,7 @@ void CQryManager::CheckQuery(int request_id, int error_id)
 	}
 }
 
-void CQryManager::OnProcessMsg(std::shared_ptr<QueryTask> msg)
+void CQryManager::OnProcessMsg(QueryTask* msg)
 {
 
 }

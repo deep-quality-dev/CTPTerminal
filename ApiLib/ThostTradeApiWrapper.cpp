@@ -20,7 +20,7 @@ CThostTradeApiWrapper::~CThostTradeApiWrapper()
 {
 }
 
-void CThostTradeApiWrapper::OnProcessMsg(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 {
 	switch (msg->msg_type())
 	{
@@ -209,7 +209,7 @@ int CThostTradeApiWrapper::ReqQryDepthMarketData()
 	return reqid;
 }
 
-void CThostTradeApiWrapper::OnRspUserLogin(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 {
 	if (msg->rsp_field()->ErrorID) {
 		if (gui_action_) {
@@ -228,12 +228,12 @@ void CThostTradeApiWrapper::OnRspUserLogin(std::shared_ptr<CThostSpiMessage> msg
 	}
 }
 
-void CThostTradeApiWrapper::OnRspUserLogout(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspUserLogout(CThostSpiMessage* msg)
 {
 
 }
 
-void CThostTradeApiWrapper::OnRspQryOrder(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspQryOrder(CThostSpiMessage* msg)
 {
 	CThostFtdcOrderField* f = msg->GetFieldPtr<CThostFtdcOrderField>();
 	if (msg->rsp_field()->ErrorID) {
@@ -246,17 +246,17 @@ void CThostTradeApiWrapper::OnRspQryOrder(std::shared_ptr<CThostSpiMessage> msg)
 	}
 }
 
-void CThostTradeApiWrapper::OnRspQryTrade(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspQryTrade(CThostSpiMessage* msg)
 {
 
 }
 
-void CThostTradeApiWrapper::OnRspQryInvestorPosition(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspQryInvestorPosition(CThostSpiMessage* msg)
 {
 
 }
 
-void CThostTradeApiWrapper::OnRspQryTradingAccount(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspQryTradingAccount(CThostSpiMessage* msg)
 {
 	CThostFtdcTradingAccountField* f = msg->GetFieldPtr<CThostFtdcTradingAccountField>();
 	if (msg->rsp_field()->ErrorID) {
@@ -272,7 +272,7 @@ void CThostTradeApiWrapper::OnRspQryTradingAccount(std::shared_ptr<CThostSpiMess
 	}
 }
 
-void CThostTradeApiWrapper::OnRspQryInstrument(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspQryInstrument(CThostSpiMessage* msg)
 {
 	CThostFtdcInstrumentField* f = msg->GetFieldPtr<CThostFtdcInstrumentField>();
 	if (msg->rsp_field()->ErrorID) {
@@ -298,12 +298,12 @@ void CThostTradeApiWrapper::OnRspQryInstrument(std::shared_ptr<CThostSpiMessage>
 	}
 }
 
-void CThostTradeApiWrapper::OnRspQryDepthMarketData(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspQryDepthMarketData(CThostSpiMessage* msg)
 {
 
 }
 
-void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(std::shared_ptr<CThostSpiMessage> msg)
+void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg)
 {
 
 }

@@ -20,7 +20,7 @@ CThostMdApiWrapper::~CThostMdApiWrapper()
 {
 }
 
-void CThostMdApiWrapper::OnProcessMsg(std::shared_ptr<CThostSpiMessage> msg)
+void CThostMdApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 {
 	switch (msg->msg_type())
 	{
@@ -190,7 +190,7 @@ void CThostMdApiWrapper::Subscribe(std::set<std::string> instruments)
 	delete[] instrument_ids;
 }
 
-void CThostMdApiWrapper::OnFrontConnected(std::shared_ptr<CThostSpiMessage> msg)
+void CThostMdApiWrapper::OnFrontConnected(CThostSpiMessage* msg)
 {
 	std::stringstream ss;
 	ss << broker_id() << "-" << user_id() << " 行情服务器连接成功";
@@ -204,7 +204,7 @@ void CThostMdApiWrapper::OnFrontConnected(std::shared_ptr<CThostSpiMessage> msg)
 	ReqUserLogin();
 }
 
-void CThostMdApiWrapper::OnRspUserLogin(std::shared_ptr<CThostSpiMessage> msg)
+void CThostMdApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 {
 	if (msg->rsp_field()->ErrorID) {
 		std::stringstream ss;
@@ -240,12 +240,12 @@ void CThostMdApiWrapper::OnRspUserLogin(std::shared_ptr<CThostSpiMessage> msg)
 	}
 }
 
-void CThostMdApiWrapper::OnRspUserLogout(std::shared_ptr<CThostSpiMessage> msg)
+void CThostMdApiWrapper::OnRspUserLogout(CThostSpiMessage* msg)
 {
 
 }
 
-void CThostMdApiWrapper::OnRspSubMarketData(std::shared_ptr<CThostSpiMessage> msg)
+void CThostMdApiWrapper::OnRspSubMarketData(CThostSpiMessage* msg)
 {
 	CThostFtdcSpecificInstrumentField* f = msg->GetFieldPtr<CThostFtdcSpecificInstrumentField>();
 	if (f) {
@@ -274,12 +274,12 @@ void CThostMdApiWrapper::OnRspSubMarketData(std::shared_ptr<CThostSpiMessage> ms
 	}
 }
 
-void CThostMdApiWrapper::OnRspUnSubMarketData(std::shared_ptr<CThostSpiMessage> msg)
+void CThostMdApiWrapper::OnRspUnSubMarketData(CThostSpiMessage* msg)
 {
 
 }
 
-void CThostMdApiWrapper::OnRtnDepthMarketData(std::shared_ptr<CThostSpiMessage> msg)
+void CThostMdApiWrapper::OnRtnDepthMarketData(CThostSpiMessage* msg)
 {
 	CThostFtdcDepthMarketDataField* f = msg->GetFieldPtr<CThostFtdcDepthMarketDataField>();
 	if (f) {

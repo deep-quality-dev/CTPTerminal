@@ -16,7 +16,7 @@ public:
 	const int MaxConnectTimeout = 10000;
 	const int MaxRequestTimeout = 10000;
 
-	virtual void OnProcessMsg(std::shared_ptr<CThostSpiMessage> msg);
+	virtual void OnProcessMsg(CThostSpiMessage* msg);
 	virtual void OnTimer(int timer_id);
 
 	virtual void Initialize(const std::string& broker_id,
@@ -32,12 +32,12 @@ protected:
 	void CheckSubscribe();
 	void Subscribe(std::set<std::string> instruments);
 
-	void OnFrontConnected(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspUserLogin(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspUserLogout(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspSubMarketData(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRspUnSubMarketData(std::shared_ptr<CThostSpiMessage> msg);
-	void OnRtnDepthMarketData(std::shared_ptr<CThostSpiMessage> msg);
+	void OnFrontConnected(CThostSpiMessage* msg);
+	void OnRspUserLogin(CThostSpiMessage* msg);
+	void OnRspUserLogout(CThostSpiMessage* msg);
+	void OnRspSubMarketData(CThostSpiMessage* msg);
+	void OnRspUnSubMarketData(CThostSpiMessage* msg);
+	void OnRtnDepthMarketData(CThostSpiMessage* msg);
 
 private:
 	CThostFtdcMdApi* md_api_;

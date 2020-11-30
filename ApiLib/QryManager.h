@@ -37,7 +37,7 @@ public:
 	void AddQuery(const std::function<int()>& func, const std::string keyword);
 	void CheckQuery(int request_id, int error_id);
 
-	virtual void OnProcessMsg(std::shared_ptr<QueryTask> msg);
+	virtual void OnProcessMsg(QueryTask* msg);
 	virtual void OnTimer(int timer_id);
 
 protected:
