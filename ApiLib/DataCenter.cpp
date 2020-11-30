@@ -1,6 +1,8 @@
 ﻿#include "stdafx.h"
 #include "DataCenter.h"
 #include "Utils/Utils.h"
+#include "Utils/Logger.h"
+#include <sstream>
 
 
 CDataCenter::CDataCenter()
@@ -48,6 +50,13 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 			quote.average_price = quote.last_price;
 		}
 	}
+
+	std::stringstream ss;
+	ss << quote.instrument_id << ", "
+		<< "最新价=" << quote.last_price << ", "
+		<< "卖价=" << quote.bid_price1 << ", "
+		<< "买价=" << quote.ask_price1;
+	Utils::Log(ss.str(), true);
 
 	// Push Quote
 	if (quotes_[quote.instrument_id][0]) {

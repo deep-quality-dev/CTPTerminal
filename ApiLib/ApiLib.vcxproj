@@ -77,7 +77,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>../;./</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../;./;../include/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -149,6 +149,7 @@
     <ClInclude Include="ThostSpiMessage.h" />
     <ClInclude Include="ThostTradeApiWrapper.h" />
     <ClInclude Include="Utils\Fault.h" />
+    <ClInclude Include="Utils\Logger.h" />
     <ClInclude Include="Utils\Utils.h" />
     <ClInclude Include="WorkerThread.h" />
   </ItemGroup>
@@ -170,6 +171,10 @@
     <ClCompile Include="ThostTradeApiWrapper.cpp" />
     <ClCompile Include="Utils\Fault.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Utils\Logger.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Utils\Utils.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>

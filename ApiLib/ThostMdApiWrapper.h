@@ -32,6 +32,7 @@ protected:
 	void CheckSubscribe();
 	void Subscribe(std::set<std::string> instruments);
 
+	void OnFrontConnected(std::shared_ptr<CThostSpiMessage> msg);
 	void OnRspUserLogin(std::shared_ptr<CThostSpiMessage> msg);
 	void OnRspUserLogout(std::shared_ptr<CThostSpiMessage> msg);
 	void OnRspSubMarketData(std::shared_ptr<CThostSpiMessage> msg);

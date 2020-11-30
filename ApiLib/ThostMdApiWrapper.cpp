@@ -4,6 +4,8 @@
 #include "DataCenter.h"
 #include "DataTypes/GuiDataAction.h"
 #include "Utils/Utils.h"
+#include "Utils/Logger.h"
+#include <sstream>
 
 
 CThostMdApiWrapper::CThostMdApiWrapper(CDataCenter* data_center, IGuiDataAction* gui_action) : 
@@ -24,12 +26,7 @@ void CThostMdApiWrapper::OnProcessMsg(std::shared_ptr<CThostSpiMessage> msg)
 	{
 	case SPI::OnMdFrontConnected:
 	{
-		ExitTimer(connect_timer_id_);
-		connected_ = true;
-		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_ConnectSuccess);
-		}
-		ReqUserLogin();
+		OnFrontConnected(msg);
 		break;
 	}
 	case SPI::OnRspUserLogin:
@@ -66,6 +63,10 @@ void CThostMdApiWrapper::OnProcessMsg(std::shared_ptr<CThostSpiMessage> msg)
 void CThostMdApiWrapper::OnTimer(int timer_id)
 {
 	if (timer_id == connect_timer_id_) {
+		std::stringstream ss;
+		ss << broker_id() << "-" << user_id() << " 连接行情服务器超时";
+		Utils::Log(ss.str(), true);
+
 		ExitTimer(timer_id);
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent_ConnectTimeout);
@@ -85,6 +86,10 @@ void CThostMdApiWrapper::OnTimer(int timer_id)
 		instrument2timer_id_.erase(it_inst);
 		subscribing_instruments_.erase(it_subscr);
 		timer_id2instrument_.erase(it_timer);
+
+		std::stringstream ss;
+		ss << broker_id() << "-" << user_id() << " 订阅合约超时, " + instrument_id;
+		Utils::Log(ss.str(), true);
 
 		need_subscribe_instruments_.insert(instrument_id);
 		CheckSubscribe();
@@ -176,19 +181,45 @@ void CThostMdApiWrapper::Subscribe(std::set<std::string> instruments)
 
 	md_api_->SubscribeMarketData(instrument_ids, instruments.size());
 	for (size_t idx = 0; idx < instruments.size(); idx++) {
+		std::stringstream ss;
+		ss << broker_id() << "-" << user_id() << " 正在订阅合约, " + std::string(instrument_ids[idx]);
+		Utils::Log(ss.str(), true);
+
 		delete[] instrument_ids[idx];
 	}
 	delete[] instrument_ids;
 }
 
+void CThostMdApiWrapper::OnFrontConnected(std::shared_ptr<CThostSpiMessage> msg)
+{
+	std::stringstream ss;
+	ss << broker_id() << "-" << user_id() << " 行情服务器连接成功";
+	Utils::Log(ss.str(), true);
+
+	ExitTimer(connect_timer_id_);
+	connected_ = true;
+	if (gui_action_) {
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_ConnectSuccess, "行情服务器连接成功");
+	}
+	ReqUserLogin();
+}
+
 void CThostMdApiWrapper::OnRspUserLogin(std::shared_ptr<CThostSpiMessage> msg)
 {
 	if (msg->rsp_field()->ErrorID) {
+		std::stringstream ss;
+		ss << broker_id() << "-" << user_id() << " 登录行情服务器失败, " << msg->rsp_field()->ErrorMsg;
+		Utils::Log(ss.str(), true);
+
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginFailed);
 		}
 	}
 	else {
+		std::stringstream ss;
+		ss << broker_id() << "-" << user_id() << " 登录行情服务器成功, " << msg->rsp_field()->ErrorMsg;
+		Utils::Log(ss.str(), true);
+
 		logined_ = true;
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginSuccess);
@@ -218,6 +249,10 @@ void CThostMdApiWrapper::OnRspSubMarketData(std::shared_ptr<CThostSpiMessage> ms
 {
 	CThostFtdcSpecificInstrumentField* f = msg->GetFieldPtr<CThostFtdcSpecificInstrumentField>();
 	if (f) {
+		std::stringstream ss;
+		ss << broker_id() << "-" << user_id() << " 订阅合约成功, " << msg->rsp_field()->ErrorMsg;
+		Utils::Log(ss.str(), true);
+
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent_SubscribeMarketData, f->InstrumentID);
 		}

@@ -1,7 +1,4 @@
-﻿#include <string>
-#include <windows.h>
-#include <time.h>
-#include "Utils.h"
+﻿#include "Utils.h"
 
 std::string GetCurrentDate()
 {
@@ -10,6 +7,16 @@ std::string GetCurrentDate()
 	GetLocalTime(&sysTime);
 	sprintf_s(buf, 256, "%04d-%02d-%02d",
 		sysTime.wYear, sysTime.wMonth, sysTime.wDay);
+	return buf;
+}
+
+std::string GetCurrentDateTime()
+{
+	char buf[256];
+	SYSTEMTIME sysTime;
+	GetLocalTime(&sysTime);
+	sprintf_s(buf, 256, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+		sysTime.wYear, sysTime.wMonth, sysTime.wDay, sysTime.wHour, sysTime.wMinute, sysTime.wSecond, sysTime.wMilliseconds);
 	return buf;
 }
 
@@ -103,6 +110,7 @@ SYSTEMTIME AddTime(const SYSTEMTIME& systime, int field, int num)
 	default:
 		return systime;
 	}
+	return GetSystemTime(timestamp);
 }
 
 std::string GetTempPath(const std::string &filepath)
@@ -135,5 +143,42 @@ int CompareDouble(double val1, double val2, int precision /*= 6*/)
 	}
 
 	return -1;
+}
+
+std::string ConvertUnicode2Multibyte(const wchar_t* str)
+{
+	if (!str) {
+		return "";
+	}
+
+	int len = WideCharToMultiByte(CP_ACP, 0, str, -1, NULL, 0, NULL, NULL);
+	char* pMultiByteString = new char[len + 1];
+	WideCharToMultiByte(CP_ACP, 0, str, -1, pMultiByteString, len, NULL, NULL);
+
+	std::string result;
+	result.append(pMultiByteString);
+
+	delete[]pMultiByteString;
+	pMultiByteString = NULL;
+
+	return result;
+}
+
+std::wstring ConvertMultibyte2Unicode(const char* str)
+{
+	if (!str) {
+		return L"";
+	}
+
+	int nBufferLength = MultiByteToWideChar(CP_ACP, 0, str, -1, NULL, 0);
+	wchar_t* pUnicodeString = new wchar_t[nBufferLength];
+	MultiByteToWideChar(CP_ACP, 0, str, -1, pUnicodeString, nBufferLength);
+
+	std::wstring wstr = pUnicodeString;
+
+	delete[]pUnicodeString;
+	pUnicodeString = NULL;
+
+	return wstr;
 }
 
