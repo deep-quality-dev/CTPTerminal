@@ -52,11 +52,12 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 	}
 
 	std::stringstream ss;
-	ss << quote.instrument_id << ", "
+	ss << GetTimeString(quote.last_time) << ", "
+		<< quote.instrument_id << ", "
 		<< "最新价=" << quote.last_price << ", "
 		<< "卖价=" << quote.bid_price1 << ", "
 		<< "买价=" << quote.ask_price1;
-	Utils::Log(ss.str(), true);
+	Utils::Log(ss.str());
 
 	// Push Quote
 	if (quotes_[quote.instrument_id][0]) {
@@ -67,4 +68,33 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 	quotes_[quote.instrument_id][1] = pquote;
 
 	server_time_ = quote.last_time;
+
+	// Write Quote
+	SaveQuote(quote);
+}
+
+void CDataCenter::SaveQuote(const Quote& quote)
+{
+	std::stringstream ss;
+	ss << "quote//" << quote.instrument_id << "_" << replace(GetCurrentDate(), "-", "") << ".csv";
+
+	std::stringstream line;
+	line << GetTimeString(quote.last_time) << ","
+		<< quote.instrument_id << ","
+		<< quote.last_price << ","
+		<< quote.ask_price1 << ","
+		<< quote.ask_volume1 << ","
+		<< quote.bid_price1 << ","
+		<< quote.bid_volume1 << ","
+		<< quote.open_price << ","
+		<< quote.close_price << ","
+		<< quote.settlement_price << ","
+		<< quote.highest_price << ","
+		<< quote.lowest_price << ","
+		<< quote.pre_settlement_price << ","
+		<< quote.average_price << ","
+		<< quote.trade_volume << ","
+		<< quote.position_volume;
+
+	SaveFile(GetRelativePath(ss.str().c_str()), line.str().c_str());
 }

@@ -16,6 +16,11 @@ public:
 		gui_action_ = gui_action;
 		timer_id_ = 1024;
 		request_id_ = 0;
+
+		CreateThread();
+	}
+	~CThostBaseWrapper() {
+		ExitThread();
 	}
 
 	int GetTimerId() {
@@ -45,7 +50,7 @@ public:
 	virtual void Initialize(const std::string& broker_id,
 		const std::string& user_id,
 		const std::string& password,
-		const std::vector<std::string> fronts) {
+		const std::vector<std::string>& fronts) {
 		broker_id_ = broker_id;
 		user_id_ = user_id;
 		password_ = password;

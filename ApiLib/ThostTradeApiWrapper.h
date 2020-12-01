@@ -22,9 +22,13 @@ public:
 	virtual void Initialize(const std::string& broker_id,
 		const std::string& user_id,
 		const std::string& password,
-		const std::vector<std::string> fronts);
+		const std::vector<std::string> fronts,
+		const std::string& user_product_info,
+		const std::string& auth_code,
+		const std::string& app_id);
 
 	void ReqConnect();
+	void ReqAuthenticate();
 	void ReqUserLogin();
 	int ReqQryTradingAccount();
 	int ReqQryAllInstrument();
@@ -36,6 +40,8 @@ public:
 
 
 protected:
+	void OnRspConnected(CThostSpiMessage* msg);
+	void OnRspAuthenticate(CThostSpiMessage* msg);
 	void OnRspUserLogin(CThostSpiMessage* msg);
 	void OnRspUserLogout(CThostSpiMessage* msg);
 	void OnRspQryOrder(CThostSpiMessage* msg);
@@ -47,11 +53,15 @@ protected:
 	void OnRspQryInvestorPositionDetail(CThostSpiMessage* msg);
 
 private:
+	std::string user_product_info_;	// 用户端产品信息
+	std::string auth_code_;	// 认证码
+	std::string app_id_;	// App代码
+
 	CThostFtdcTraderApi* trader_api_;
 	std::shared_ptr<CThostTraderSpiHandler> trader_spi_handler_;
 	std::shared_ptr<CQryManager> qry_manager_;
 
-	bool connected_, logined_;
+	bool connected_, authenticated_, logined_;
 	int login_times_;
 
 	int connect_timer_id_; // 检查连接的定时ID

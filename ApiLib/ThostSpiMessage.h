@@ -10,6 +10,7 @@ public:
 		OnMdFrontDisconnected,
 		OnTradeFrontConnected,
 		OnTradeFrontDisconnected,
+		OnRspAuthenticate,
 		OnRspUserLogin,
 		OnRspUserLogout,
 		OnRspSubMarketData,

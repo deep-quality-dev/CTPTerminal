@@ -10,7 +10,7 @@ public:
 	CQuoteServerHandler(CQuoteService* quote_service);
 	~CQuoteServerHandler();
 
-	virtual void OnLoginProcess(ApiEvent api_event, const char* content = NULL, int error_id = 0);
+	virtual void OnLoginProcess(ApiEvent api_event, const char* content = NULL, int error_id = 0, const char* error_msg = NULL);
 
 	virtual void RefreshAccount(const TradingAccount& account);
 

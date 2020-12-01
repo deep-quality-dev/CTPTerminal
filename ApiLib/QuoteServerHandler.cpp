@@ -1,6 +1,8 @@
 ﻿#include "stdafx.h"
 #include "QuoteServerHandler.h"
 #include "QuoteService.h"
+#include "Utils/Logger.h"
+#include <sstream>
 
 
 CQuoteServerHandler::CQuoteServerHandler(CQuoteService* quote_service) : quote_service_(quote_service)
@@ -12,9 +14,14 @@ CQuoteServerHandler::~CQuoteServerHandler()
 {
 }
 
-void CQuoteServerHandler::OnLoginProcess(ApiEvent api_event, const char* content /*= NULL*/, int error_id /*= 0*/)
+void CQuoteServerHandler::OnLoginProcess(ApiEvent api_event, const char* content /*= NULL*/, int error_id /*= 0*/, const char* error_msg /*= NULL*/)
 {
-
+	std::stringstream ss;
+	ss << api_event
+		<< ", " << (content == NULL ? "" : content) << ", "
+		<< error_id << ", "
+		<< (error_msg == NULL ? "," : error_msg);
+	Utils::Log(ss.str());
 }
 
 void CQuoteServerHandler::RefreshAccount(const TradingAccount& account)

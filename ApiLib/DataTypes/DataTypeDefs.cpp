@@ -103,6 +103,13 @@ Quote::Quote(const CThostFtdcDepthMarketDataField& field)
 		bid_price1 = 0;
 	}
 
+	if (field.LastPrice >= 0 && field.LastPrice <= 1e+10) {
+		last_price = field.LastPrice;
+	}
+	else {
+		last_price = 0;
+	}
+
 	if (field.OpenPrice >= 0 && field.OpenPrice <= 1e+10) {
 		open_price = field.OpenPrice;
 	}
@@ -150,6 +157,20 @@ Quote::Quote(const CThostFtdcDepthMarketDataField& field)
 	}
 	else {
 		average_price = 0;
+	}
+
+	if (field.UpperLimitPrice >= 0 && field.UpperLimitPrice <= 1e+10) {
+		upper_limit_price = field.UpperLimitPrice;
+	}
+	else {
+		upper_limit_price = 0;
+	}
+
+	if (field.LowerLimitPrice >= 0 && field.LowerLimitPrice <= 1e+10) {
+		lower_limit_price = field.LowerLimitPrice;
+	}
+	else {
+		lower_limit_price = 0;
 	}
 
 	if (ask_price1 == 0) {
@@ -248,6 +269,11 @@ Instrument::Instrument(const Instrument &ins)
 }
 
 Instrument::Instrument(const std::string& id) : instrument_id(id)
+{
+
+}
+
+Instrument::Instrument(const ExchangeID exid, const std::string& id) : exchange_id(exid), instrument_id(id)
 {
 
 }

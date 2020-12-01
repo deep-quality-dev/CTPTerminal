@@ -41,15 +41,6 @@ typedef enum
 	Status_Touched
 } OrderStatus;
 
-
-struct ServerConfig
-{
-	std::string broker_id;
-	std::vector<std::string> addresses;
-	std::string user_id;
-	std::string password;
-};
-
 struct TradingAccount
 {
 	TradingAccount(CThostFtdcTradingAccountField& field);
@@ -141,8 +132,8 @@ struct Quote
 	int				ask_volume1;		//买价量
 	int				bid_volume1;		//卖价量
 
-	double			upper_limit_price;
-	double			lower_limit_price;
+	double			upper_limit_price;	// 涨停板价
+	double			lower_limit_price;	// 跌停板价
 
 	__time64_t		last_time;
 
@@ -182,6 +173,7 @@ struct Instrument
 	Instrument(const CThostFtdcInstrumentField& field);
 	Instrument(const Instrument& ins);
 	Instrument(const std::string& id);
+	Instrument(ExchangeID exid, const std::string& id);
 	bool operator < (const Instrument& Instrument) const;
 	typedef std::string key_type;
 	key_type GetKey() const { return instrument_id; }

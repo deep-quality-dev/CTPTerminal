@@ -14,6 +14,9 @@ public:
 	void OnRtnQuote(const Quote& quote);
 
 protected:
+	void SaveQuote(const Quote& quote);
+
+protected:
 	std::set<Instrument> instruments_;
 	std::map<std::string, QuoteDeque> quotes_;
 

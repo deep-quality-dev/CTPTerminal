@@ -22,7 +22,7 @@ public:
 	virtual void Initialize(const std::string& broker_id,
 		const std::string& user_id,
 		const std::string& password,
-		const std::vector<std::string> fronts);
+		const std::vector<std::string>& fronts);
 
 	void ReqConnect();
 	void ReqUserLogin();
@@ -30,7 +30,8 @@ public:
 
 protected:
 	void CheckSubscribe();
-	void Subscribe(std::set<std::string> instruments);
+	void Subscribe(const std::set<std::string>& instruments);
+	void Unsubscribe(const std::set<std::string>& instruments);
 
 	void OnFrontConnected(CThostSpiMessage* msg);
 	void OnRspUserLogin(CThostSpiMessage* msg);

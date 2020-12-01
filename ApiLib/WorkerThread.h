@@ -107,13 +107,12 @@ template <class T>
 std::thread::id WorkerThread<T>::CreateTimer(int timer_id, int delay)
 {
 	std::shared_ptr<TimerContext> context(new TimerContext());
-	context->thread_id = timer_thread_->get_id();
 	context->timer_id = timer_id;
 	context->delay = delay;
 	context->running = true;
 
-	// std::thread timer_thread(&WorkerThread::TimerThread, this, &context->running, timer_id, delay);
 	context->thread = std::thread(&WorkerThread::TimerThread, this, &context->running, timer_id, delay);
+	context->thread_id = context->thread.get_id();
 
 	timer_threads_.push_back(context);
 	return context->thread_id;
@@ -125,8 +124,8 @@ void WorkerThread<T>::ExitTimer(int timer_id)
 	for (auto it = timer_threads_.begin(); it != timer_threads_.end(); it++) {
 		if ((*it)->timer_id == timer_id) {
 			(*it)->running = false;
-			timer_threads_.erase(it);
 			idle_timer_threads_.push(*it);
+			timer_threads_.erase(it);
 
 			if (!timer_thread_) {
 				timer_thread_ = std::unique_ptr<std::thread>(new std::thread(&WorkerThread::SpawnTimerThread, this));
@@ -194,8 +193,8 @@ void WorkerThread<T>::Process()
 		}
 
 		if (threadmsg->msgType == MSG_TIMER) {
-			TimerContext* timer_context = (TimerContext*)threadmsg->msgData.get();
-			OnTimer(timer_context->timer_id);
+			int* timer_id = (int*) threadmsg->msgData.get();
+			OnTimer(*timer_id);
 		}
 		else {
 			T* msg_context = (T*)threadmsg->msgData.get();

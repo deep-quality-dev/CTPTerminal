@@ -114,7 +114,9 @@ public:
 	virtual void OnHeartBeatWarning(int nTimeLapse) {};
 
 	///客户端认证响应
-	virtual void OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+	virtual void OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+		AddMsg(new CThostSpiMessage(SPI::OnRspAuthenticate, pRspAuthenticateField, pRspInfo, nRequestID, bIsLast));
+	}
 
 
 	///登录请求响应

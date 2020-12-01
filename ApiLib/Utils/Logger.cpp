@@ -22,7 +22,7 @@ void Utils::LogInitialize(const char* path)
 	g_initialized = true;
 }
 
-void Utils::Log(const std::string& data, bool to_console, int log_level /*= ENUM_LOG_LEVEL::LOG_LEVEL_INFO*/)
+void Utils::Log(const std::string& data, bool to_console /*= false*/, int log_level /*= ENUM_LOG_LEVEL::LOG_LEVEL_INFO*/)
 {
 	LogInitialize();
 
@@ -33,7 +33,7 @@ void Utils::Log(const std::string& data, bool to_console, int log_level /*= ENUM
 		LOGI(data);
 }
 
-void Utils::Log(const std::wstring& data, bool to_console, int log_level /*= ENUM_LOG_LEVEL::LOG_LEVEL_INFO*/)
+void Utils::Log(const std::wstring& data, bool to_console /*= false*/, int log_level /*= ENUM_LOG_LEVEL::LOG_LEVEL_INFO*/)
 {
 	LogInitialize();
 

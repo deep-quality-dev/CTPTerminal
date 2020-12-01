@@ -5,9 +5,12 @@
 typedef enum API_EVENT {
 	ApiEvent_ConnectTimeout,
 	ApiEvent_ConnectSuccess,
+	ApiEvent_AuthenticationFailed,
+	ApiEvent_AuthenticationSuccess,
 	ApiEvent_LoginFailed,
 	ApiEvent_LoginSuccess,
 	ApiEvent_SubscribeMarketData,
+	ApiEvent_UnsubscribeMarketData,
 	ApiEvent_QryOrderFailed,
 	ApiEvent_QryOrderSuccess,
 	ApiEvent_QryTradingAccountFailed,
@@ -19,7 +22,7 @@ typedef enum API_EVENT {
 
 class IGuiDataAction {
 public:
-	virtual void OnLoginProcess(ApiEvent api_event, const char* content = NULL, int error_id = 0) = 0;
+	virtual void OnLoginProcess(ApiEvent api_event, const char* content = NULL, int error_id = 0, const char* error_msg = NULL) = 0;
 
 	virtual void RefreshAccount(const TradingAccount& account) = 0;
 

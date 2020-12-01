@@ -1,4 +1,5 @@
 ﻿#include "Utils.h"
+#include <fstream>
 
 std::string GetCurrentDate()
 {
@@ -47,13 +48,14 @@ __time64_t CalcTimestamp(const std::string& timestr)
 
 	time_stamp = _mktime64(&tmElements);
 
-	return time_stamp;
+	return time_stamp * 1000;
 }
 
 SYSTEMTIME GetSystemTime(__time64_t timestamp)
 {
+	__time64_t local = timestamp / 1000;
 	struct tm tm = { 0 };
-	gmtime_s(&tm, &timestamp);
+	gmtime_s(&tm, &local);
 
 	SYSTEMTIME systime = { 0 };
 	systime.wYear = tm.tm_year + 1900;
@@ -84,6 +86,24 @@ __time64_t CalcTimestampMilli(SYSTEMTIME systime)
 	time_stamp = _mktime64(&tm) * 1000 + systime.wMilliseconds;
 
 	return time_stamp;
+}
+
+std::string GetTimeString(__time64_t timestamp, int format /*= 0*/)
+{
+	SYSTEMTIME systime = GetSystemTime(timestamp);
+	return GetTimeString(systime, format);
+}
+
+std::string GetTimeString(SYSTEMTIME systime, int format /*= 0*/)
+{
+	char buf[256];
+	switch (format) {
+	default:
+		sprintf_s(buf, 256, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+			systime.wYear, systime.wMonth, systime.wDay, systime.wHour, systime.wMinute, systime.wSecond, systime.wMilliseconds);
+		break;
+	}
+	return buf;
 }
 
 SYSTEMTIME AddTime(const SYSTEMTIME& systime, int field, int num)
@@ -131,14 +151,6 @@ std::string GetRelativePath(const char* path)
 	return std::string(szFull) + path;
 }
 
-char* safe_strcpy(char* dst, const char* src, unsigned int max_length)
-{
-	size_t len = strlen(src);
-	strncpy_s(dst, max_length, src, len > max_length ? max_length : len);
-	dst[max_length - 1] = 0;
-	return dst;
-}
-
 int CompareDouble(double val1, double val2, int precision /*= 6*/)
 {
 	double dPrecision = (double)1 / (double)pow(10.0, precision);
@@ -153,6 +165,35 @@ int CompareDouble(double val1, double val2, int precision /*= 6*/)
 	}
 
 	return -1;
+}
+
+char* safe_strcpy(char* dst, const char* src, unsigned int max_length)
+{
+	size_t len = strlen(src);
+	strncpy_s(dst, max_length, src, len > max_length ? max_length : len);
+	dst[max_length - 1] = 0;
+	return dst;
+}
+
+bool replace(std::string& str, const std::string& from, const std::string& to)
+{
+	size_t start_pos = str.find(from);
+	if (start_pos == std::string::npos)
+		return false;
+	str.replace(start_pos, from.length(), to);
+	return true;
+}
+
+bool replace_all(std::string& str, const std::string& from, const std::string& to)
+{
+	if (from.empty())
+		return false;
+	size_t start_pos = 0;
+	while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+	}
+	return true;
 }
 
 std::string ConvertUnicode2Multibyte(const wchar_t* str)
@@ -190,5 +231,38 @@ std::wstring ConvertMultibyte2Unicode(const char* str)
 	pUnicodeString = NULL;
 
 	return wstr;
+}
+
+bool ExistFile(const std::string& path)
+{
+	std::ifstream f(path.c_str());
+	bool exist = f.good();
+	f.close();
+	return exist;
+}
+
+bool SaveFile(const std::string& path, const char* data, bool append /*= true*/)
+{
+	std::ofstream fout;
+
+	if (append) {
+		if (ExistFile(path)) {
+			fout.open(path, std::ofstream::out | std::ofstream::app);
+		}
+		else {
+			fout.open(path);
+		}
+	}
+	else {
+		fout.open(path);
+	}
+
+	if (fout.good()) {
+		fout.clear();
+		fout << data;
+		fout.close();
+		return true;
+	}
+	return false;
 }
 

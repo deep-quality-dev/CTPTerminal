@@ -63,10 +63,6 @@ void CThostMdApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 void CThostMdApiWrapper::OnTimer(int timer_id)
 {
 	if (timer_id == connect_timer_id_) {
-		std::stringstream ss;
-		ss << broker_id() << "-" << user_id() << " 连接行情服务器超时";
-		Utils::Log(ss.str(), true);
-
 		ExitTimer(timer_id);
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent_ConnectTimeout);
@@ -89,14 +85,14 @@ void CThostMdApiWrapper::OnTimer(int timer_id)
 
 		std::stringstream ss;
 		ss << broker_id() << "-" << user_id() << " 订阅合约超时, " + instrument_id;
-		Utils::Log(ss.str(), true);
+		Utils::Log(ss.str());
 
 		need_subscribe_instruments_.insert(instrument_id);
 		CheckSubscribe();
 	}
 }
 
-void CThostMdApiWrapper::Initialize(const std::string& broker_id, const std::string& user_id, const std::string& password, const std::vector<std::string> fronts)
+void CThostMdApiWrapper::Initialize(const std::string& broker_id, const std::string& user_id, const std::string& password, const std::vector<std::string>& fronts)
 {
 	CThostBaseWrapper::Initialize(broker_id, user_id, password, fronts);
 
@@ -142,7 +138,25 @@ void CThostMdApiWrapper::ReqUserLogin()
 
 void CThostMdApiWrapper::ReqSubscribeQuote(std::set<std::string> instruments)
 {
+	// 先取消订阅不需要的合约
+	std::set<std::string> need_unsubscribes = allocated_instruments_;
 	allocated_instruments_ = instruments;
+	for (auto it_inst = allocated_instruments_.begin(); it_inst != allocated_instruments_.end(); it_inst++) {
+		need_unsubscribes.erase(*it_inst);
+	}
+	Unsubscribe(need_unsubscribes);
+	for (auto it_subscr = need_unsubscribes.begin(); it_subscr != need_unsubscribes.end(); it_subscr++) {
+		need_subscribe_instruments_.erase(*it_subscr);
+		// subscribed_instruments_.erase(*it_subscr);
+	}
+
+	for (auto it_inst = allocated_instruments_.begin(); it_inst != allocated_instruments_.end(); it_inst++) {
+		auto it_subscr = subscribed_instruments_.find(*it_inst);
+		if (it_subscr == subscribed_instruments_.end()) {
+			need_subscribe_instruments_.insert(*it_inst);
+		}
+	}
+
 	CheckSubscribe();
 }
 
@@ -150,19 +164,20 @@ void CThostMdApiWrapper::CheckSubscribe()
 {
 	if (connected_ && logined_) {
 		std::set<std::string> need_subscribes;
-		for (auto it = need_subscribe_instruments_.begin(); it != need_subscribe_instruments_.end(); it++) {
+		std::set<std::string> tneed_subscribe_instruments = need_subscribe_instruments_;
+		for (auto it = tneed_subscribe_instruments.begin(); it != tneed_subscribe_instruments.end(); it++) {
 			auto it_sub = subscribing_instruments_.find(*it);
 			if (it_sub == subscribing_instruments_.end()) {
 				subscribing_instruments_.insert(*it);
 				need_subscribes.insert(*it);
 			}
-			need_subscribe_instruments_.erase(it);
+			need_subscribe_instruments_.erase(*it);
 		}
 		Subscribe(need_subscribes);
 	}
 }
 
-void CThostMdApiWrapper::Subscribe(std::set<std::string> instruments)
+void CThostMdApiWrapper::Subscribe(const std::set<std::string>& instruments)
 {
 	if (instruments.size() < 1)
 		return;
@@ -183,7 +198,30 @@ void CThostMdApiWrapper::Subscribe(std::set<std::string> instruments)
 	for (size_t idx = 0; idx < instruments.size(); idx++) {
 		std::stringstream ss;
 		ss << broker_id() << "-" << user_id() << " 正在订阅合约, " + std::string(instrument_ids[idx]);
-		Utils::Log(ss.str(), true);
+		Utils::Log(ss.str());
+
+		delete[] instrument_ids[idx];
+	}
+	delete[] instrument_ids;
+}
+
+void CThostMdApiWrapper::Unsubscribe(const std::set<std::string>& instruments)
+{
+	if (instruments.size() < 1)
+		return;
+
+	char** instrument_ids = new char*[instruments.size()];
+	for (auto it = instruments.begin(); it != instruments.end(); it++) {
+		int index = std::distance(instruments.begin(), it);
+		instrument_ids[index] = new char[it->length() + 1];
+		safe_strcpy(instrument_ids[index], it->c_str(), it->length() + 1);
+	}
+
+	md_api_->UnSubscribeMarketData(instrument_ids, instruments.size());
+	for (size_t idx = 0; idx < instruments.size(); idx++) {
+		std::stringstream ss;
+		ss << broker_id() << "-" << user_id() << " 正在取消订阅合约, " + std::string(instrument_ids[idx]);
+		Utils::Log(ss.str());
 
 		delete[] instrument_ids[idx];
 	}
@@ -192,10 +230,6 @@ void CThostMdApiWrapper::Subscribe(std::set<std::string> instruments)
 
 void CThostMdApiWrapper::OnFrontConnected(CThostSpiMessage* msg)
 {
-	std::stringstream ss;
-	ss << broker_id() << "-" << user_id() << " 行情服务器连接成功";
-	Utils::Log(ss.str(), true);
-
 	ExitTimer(connect_timer_id_);
 	connected_ = true;
 	if (gui_action_) {
@@ -207,22 +241,17 @@ void CThostMdApiWrapper::OnFrontConnected(CThostSpiMessage* msg)
 void CThostMdApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 {
 	if (msg->rsp_field()->ErrorID) {
-		std::stringstream ss;
-		ss << broker_id() << "-" << user_id() << " 登录行情服务器失败, " << msg->rsp_field()->ErrorMsg;
-		Utils::Log(ss.str(), true);
-
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginFailed);
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginFailed,
+				"登录行情服务器失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
 		}
 	}
 	else {
-		std::stringstream ss;
-		ss << broker_id() << "-" << user_id() << " 登录行情服务器成功, " << msg->rsp_field()->ErrorMsg;
-		Utils::Log(ss.str(), true);
-
 		logined_ = true;
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginSuccess);
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginSuccess, "登录行情服务器成功");
 		}
 
 		if (login_times_) { // 如果登录过，比如掉线重新连接的时候
@@ -251,7 +280,7 @@ void CThostMdApiWrapper::OnRspSubMarketData(CThostSpiMessage* msg)
 	if (f) {
 		std::stringstream ss;
 		ss << broker_id() << "-" << user_id() << " 订阅合约成功, " << msg->rsp_field()->ErrorMsg;
-		Utils::Log(ss.str(), true);
+		Utils::Log(ss.str());
 
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent_SubscribeMarketData, f->InstrumentID);
@@ -276,7 +305,21 @@ void CThostMdApiWrapper::OnRspSubMarketData(CThostSpiMessage* msg)
 
 void CThostMdApiWrapper::OnRspUnSubMarketData(CThostSpiMessage* msg)
 {
+	CThostFtdcSpecificInstrumentField* f = msg->GetFieldPtr<CThostFtdcSpecificInstrumentField>();
+	if (f) {
+		std::stringstream ss;
+		ss << broker_id() << "-" << user_id() << " 取消订阅合约成功, " << msg->rsp_field()->ErrorMsg;
+		Utils::Log(ss.str());
 
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_UnsubscribeMarketData, f->InstrumentID);
+		}
+
+		auto it_subscr = subscribed_instruments_.find(f->InstrumentID);
+		if (it_subscr != subscribed_instruments_.end()) {
+			subscribed_instruments_.erase(it_subscr);
+		}
+	}
 }
 
 void CThostMdApiWrapper::OnRtnDepthMarketData(CThostSpiMessage* msg)

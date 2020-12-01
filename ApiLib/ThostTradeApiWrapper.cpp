@@ -9,7 +9,7 @@
 
 CThostTradeApiWrapper::CThostTradeApiWrapper(CDataCenter* data_center, IGuiDataAction* gui_action) :
 	CThostBaseWrapper(data_center, gui_action),
-	trader_api_(NULL), connected_(false), logined_(false), login_times_(0),
+	trader_api_(NULL), connected_(false), authenticated_(false), logined_(false), login_times_(0),
 	connect_timer_id_(100),
 	qry_manager_(new CQryManager())
 {
@@ -26,12 +26,12 @@ void CThostTradeApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 	{
 	case SPI::OnTradeFrontConnected:
 	{
-		ExitTimer(connect_timer_id_);
-		connected_ = true;
-		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_ConnectSuccess);
-		}
-		ReqUserLogin();
+		OnRspConnected(msg);
+		break;
+	}
+	case SPI::OnRspAuthenticate:
+	{
+		OnRspAuthenticate(msg);
 		break;
 	}
 	case SPI::OnRspUserLogin:
@@ -87,21 +87,38 @@ void CThostTradeApiWrapper::OnTimer(int timer_id)
 	if (timer_id == connect_timer_id_) {
 		ExitTimer(timer_id);
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_ConnectTimeout);
+			gui_action_->OnLoginProcess(ApiEvent_ConnectTimeout, "交易服务器链接超时");
 		}
 		return;
 	}
 }
 
-void CThostTradeApiWrapper::Initialize(const std::string& broker_id, const std::string& user_id, const std::string& password, const std::vector<std::string> fronts)
+void CThostTradeApiWrapper::Initialize(const std::string& broker_id, 
+	const std::string& user_id, const std::string& password, const std::vector<std::string> fronts,
+	const std::string& user_product_info,
+	const std::string& auth_code,
+	const std::string& app_id)
 {
 	CThostBaseWrapper::Initialize(broker_id, user_id, password, fronts);
+	user_product_info_ = user_product_info;
+	auth_code_ = auth_code;
+	app_id_ = app_id;
+
+	if (app_id_.length() < 1 || auth_code.length() < 1) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_AuthenticationFailed, "交易终端认证失败");
+		}
+		return;
+	}
 
 	if (!connected_) {
 		ReqConnect();
 	}
-	else {
+	else if (authenticated_ && !logined_) {
 		ReqUserLogin();
+	}
+	else {
+		ReqAuthenticate();
 	}
 }
 
@@ -125,6 +142,19 @@ void CThostTradeApiWrapper::ReqConnect()
 	trader_api_->SubscribePublicTopic(THOST_TERT_RESTART);
 
 	CreateTimer(connect_timer_id_, MaxConnectTimeout);
+}
+
+void CThostTradeApiWrapper::ReqAuthenticate()
+{
+	CThostFtdcReqAuthenticateField field = { 0 };
+	safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	safe_strcpy(field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
+	safe_strcpy(field.UserProductInfo, user_product_info_.c_str(), sizeof(TThostFtdcProductInfoType));
+	safe_strcpy(field.AuthCode, auth_code_.c_str(), sizeof(TThostFtdcAuthCodeType));
+	safe_strcpy(field.AppID, app_id_.c_str(), sizeof(TThostFtdcAppIDType));
+
+	int reqid = GetRequestId();
+	trader_api_->ReqAuthenticate(&field, reqid);
 }
 
 void CThostTradeApiWrapper::ReqUserLogin()
@@ -209,17 +239,50 @@ int CThostTradeApiWrapper::ReqQryDepthMarketData()
 	return reqid;
 }
 
+void CThostTradeApiWrapper::OnRspConnected(CThostSpiMessage* msg)
+{
+	ExitTimer(connect_timer_id_);
+	connected_ = true;
+	if (gui_action_) {
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_ConnectSuccess, "交易服务器链接成功");
+	}
+	ReqAuthenticate();
+}
+
+void CThostTradeApiWrapper::OnRspAuthenticate(CThostSpiMessage* msg)
+{
+	if (msg->rsp_field()->ErrorID) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_AuthenticationFailed,
+				"交易终端认证失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
+	}
+	else {
+		authenticated_ = true;
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_AuthenticationSuccess, "交易终端认证成功");
+		}
+
+		ReqUserLogin();
+	}
+}
+
 void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 {
 	if (msg->rsp_field()->ErrorID) {
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginFailed);
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginFailed,
+				"交易服务器登录失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
 		}
 	}
 	else {
 		logined_ = true;
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginSuccess);
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginSuccess, "交易服务器登录成功");
 		}
 
 		if (!login_times_) { // 第一次登录
@@ -238,7 +301,10 @@ void CThostTradeApiWrapper::OnRspQryOrder(CThostSpiMessage* msg)
 	CThostFtdcOrderField* f = msg->GetFieldPtr<CThostFtdcOrderField>();
 	if (msg->rsp_field()->ErrorID) {
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_QryOrderFailed, "");
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_QryOrderFailed, 
+				"获取委托单列表失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
 		}
 	}
 	else {
@@ -260,14 +326,18 @@ void CThostTradeApiWrapper::OnRspQryTradingAccount(CThostSpiMessage* msg)
 {
 	CThostFtdcTradingAccountField* f = msg->GetFieldPtr<CThostFtdcTradingAccountField>();
 	if (msg->rsp_field()->ErrorID) {
-		gui_action_->OnLoginProcess(ApiEvent_QryTradingAccountFailed, "查询帐户资金失败", msg->rsp_field()->ErrorID);
+		gui_action_->OnLoginProcess(ApiEvent_QryTradingAccountFailed, 
+			"查询帐户资金失败",
+			msg->rsp_field()->ErrorID,
+			msg->rsp_field()->ErrorMsg);
 	}
 	else {
 		TradingAccount account(*f);
 
 		if (gui_action_) {
 			gui_action_->RefreshAccount(account);
-			gui_action_->OnLoginProcess(ApiEvent_QryTradingAccountSuccess, "查询帐户资金成功");
+			gui_action_->OnLoginProcess(ApiEvent_QryTradingAccountSuccess,
+				"查询帐户资金成功");
 		}
 	}
 }
@@ -276,7 +346,10 @@ void CThostTradeApiWrapper::OnRspQryInstrument(CThostSpiMessage* msg)
 {
 	CThostFtdcInstrumentField* f = msg->GetFieldPtr<CThostFtdcInstrumentField>();
 	if (msg->rsp_field()->ErrorID) {
-		gui_action_->OnLoginProcess(ApiEvent_QryInstrumentFailed, "查询合约失败", msg->rsp_field()->ErrorID);
+		gui_action_->OnLoginProcess(ApiEvent_QryInstrumentFailed,
+			"查询合约失败",
+			msg->rsp_field()->ErrorID,
+			msg->rsp_field()->ErrorMsg);
 	}
 	else {
 		Instrument inst(*f);
