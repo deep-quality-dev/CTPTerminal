@@ -88,16 +88,20 @@ __time64_t CalcTimestampMilli(SYSTEMTIME systime)
 	return time_stamp;
 }
 
-std::string GetTimeString(__time64_t timestamp, int format /*= 0*/)
+std::string GetTimeString(__time64_t timestamp, int format /*= 1*/)
 {
 	SYSTEMTIME systime = GetSystemTime(timestamp);
 	return GetTimeString(systime, format);
 }
 
-std::string GetTimeString(SYSTEMTIME systime, int format /*= 0*/)
+std::string GetTimeString(SYSTEMTIME systime, int format /*= 1*/)
 {
 	char buf[256];
 	switch (format) {
+	case 0:
+		sprintf_s(buf, 256, "%04d-%02d-%02d",
+			systime.wYear, systime.wMonth, systime.wDay);
+		break;
 	default:
 		sprintf_s(buf, 256, "%04d-%02d-%02d %02d:%02d:%02d.%03d",
 			systime.wYear, systime.wMonth, systime.wDay, systime.wHour, systime.wMinute, systime.wSecond, systime.wMilliseconds);

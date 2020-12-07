@@ -34,6 +34,7 @@ protected:
 	void Unsubscribe(const std::set<std::string>& instruments);
 
 	void OnFrontConnected(CThostSpiMessage* msg);
+	void OnFrontDisconnected(CThostSpiMessage* msg);
 	void OnRspUserLogin(CThostSpiMessage* msg);
 	void OnRspUserLogout(CThostSpiMessage* msg);
 	void OnRspSubMarketData(CThostSpiMessage* msg);

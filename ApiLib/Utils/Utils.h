@@ -14,10 +14,11 @@ SYSTEMTIME GetSystemTime(__time64_t timestamp);
 __time64_t CalcTimestampMilli(SYSTEMTIME systime);
 /*
  * @param format
- *    0: yyyy-MM-dd HH:mm:ss.fff
+ *    0: yyyy-MM-dd
+ *    1: yyyy-MM-dd HH:mm:ss.fff
  */
-std::string GetTimeString(__time64_t timestamp, int format = 0);
-std::string GetTimeString(SYSTEMTIME systime, int format = 0);
+std::string GetTimeString(__time64_t timestamp, int format = 1);
+std::string GetTimeString(SYSTEMTIME systime, int format = 1);
 /*
  * @param field
  *	  0: add date

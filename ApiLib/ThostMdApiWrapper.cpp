@@ -29,6 +29,11 @@ void CThostMdApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 		OnFrontConnected(msg);
 		break;
 	}
+	case SPI::OnMdFrontDisconnected:
+	{
+		OnFrontDisconnected(msg);
+		break;
+	}
 	case SPI::OnRspUserLogin:
 	{
 		OnRspUserLogin(msg);
@@ -236,6 +241,14 @@ void CThostMdApiWrapper::OnFrontConnected(CThostSpiMessage* msg)
 		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_ConnectSuccess, "行情服务器连接成功");
 	}
 	ReqUserLogin();
+}
+
+void CThostMdApiWrapper::OnFrontDisconnected(CThostSpiMessage* msg)
+{
+	connected_ = false;
+	if (gui_action_) {
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_Disconnected, "行情服务器连接掉线");
+	}
 }
 
 void CThostMdApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)

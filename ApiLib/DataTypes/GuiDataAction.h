@@ -5,6 +5,7 @@
 typedef enum API_EVENT {
 	ApiEvent_ConnectTimeout,
 	ApiEvent_ConnectSuccess,
+	ApiEvent_Disconnected,
 	ApiEvent_AuthenticationFailed,
 	ApiEvent_AuthenticationSuccess,
 	ApiEvent_LoginFailed,

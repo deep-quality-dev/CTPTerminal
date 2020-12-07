@@ -75,8 +75,16 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 
 void CDataCenter::SaveQuote(const Quote& quote)
 {
+	// 4点之前的行情都放在一起
+	__time64_t time = quote.last_time;
+	SYSTEMTIME systime = GetSystemTime(time);
+	if (systime.wHour < 4) {
+		systime = AddTime(systime, 0, -1);
+	}
+	std::string date = GetTimeString(systime, 0);
+
 	std::stringstream ss;
-	ss << "quote//" << quote.instrument_id << "_" << replace_all(GetCurrentDate(), "-", "") << ".csv";
+	ss << "quote//" << quote.instrument_id << "_" << replace_all(date, "-", "") << ".csv";
 
 	std::stringstream line;
 	line << GetTimeString(quote.last_time) << ","
