@@ -51,13 +51,13 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 		}
 	}
 
-	std::stringstream ss;
-	ss << GetTimeString(quote.last_time) << ", "
-		<< quote.instrument_id << ", "
-		<< "最新价=" << quote.last_price << ", "
-		<< "卖价=" << quote.bid_price1 << ", "
-		<< "买价=" << quote.ask_price1;
-	Utils::Log(ss.str());
+// 	std::stringstream ss;
+// 	ss << GetTimeString(quote.last_time) << ", "
+// 		<< quote.instrument_id << ", "
+// 		<< "最新价=" << quote.last_price << ", "
+// 		<< "卖价=" << quote.bid_price1 << ", "
+// 		<< "买价=" << quote.ask_price1;
+// 	Utils::Log(ss.str());
 
 	// Push Quote
 	if (quotes_[quote.instrument_id][0]) {
@@ -76,7 +76,7 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 void CDataCenter::SaveQuote(const Quote& quote)
 {
 	std::stringstream ss;
-	ss << "quote//" << quote.instrument_id << "_" << replace(GetCurrentDate(), "-", "") << ".csv";
+	ss << "quote//" << quote.instrument_id << "_" << replace_all(GetCurrentDate(), "-", "") << ".csv";
 
 	std::stringstream line;
 	line << GetTimeString(quote.last_time) << ","
@@ -94,7 +94,7 @@ void CDataCenter::SaveQuote(const Quote& quote)
 		<< quote.pre_settlement_price << ","
 		<< quote.average_price << ","
 		<< quote.trade_volume << ","
-		<< quote.position_volume;
+		<< quote.position_volume << std::endl;
 
 	SaveFile(GetRelativePath(ss.str().c_str()), line.str().c_str());
 }

@@ -38,8 +38,8 @@ int CompareDouble(double val1, double val2, int precision = 6);
 
 char* safe_strcpy(char* dst, const char* src, unsigned int max_length);
 
-bool replace(std::string& str, const std::string& from, const std::string& to);
-bool replace_all(std::string& str, const std::string& from, const std::string& to);
+std::string replace(std::string& str, const std::string& from, const std::string& to);
+std::string replace_all(std::string& str, const std::string& from, const std::string& to);
 
 std::string ConvertUnicode2Multibyte(const wchar_t* str);
 std::wstring ConvertMultibyte2Unicode(const char* str);
