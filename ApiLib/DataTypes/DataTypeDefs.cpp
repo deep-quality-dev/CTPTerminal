@@ -4,6 +4,34 @@
 #include "Utils/Utils.h"
 
 
+TimeDuration::TimeDuration(const std::string& product_id, __time64_t start_time, __time64_t end_time)
+{
+	this->product_id = product_id;
+	this->start_time = start_time;
+	this->end_time = end_time;
+}
+
+TimeDuration TimeDuration::MakeTimeDuration(const std::string& product_id, int week_day, int start_hour, int start_minute, int end_hour, int end_minute)
+{
+	SYSTEMTIME systime = { 0 };
+	systime.wYear = 2001;
+	systime.wMonth = 1;
+	systime.wDay = week_day - 1;
+	systime.wHour = start_hour;
+	systime.wMinute = start_minute;
+	systime.wSecond = 0;
+
+	__time64_t start_time = CalcTimestampMilli(systime);
+
+	systime.wHour = end_hour;
+	systime.wMinute = end_minute;
+	systime.wSecond = 0;
+
+	__time64_t end_time = CalcTimestampMilli(systime);
+
+	return TimeDuration(product_id, start_time, end_time);
+}
+
 TradingAccount::TradingAccount(CThostFtdcTradingAccountField& field)
 {
 	///经纪公司代码

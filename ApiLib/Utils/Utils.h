@@ -11,7 +11,7 @@ std::string GetCurrentDate();
 std::string GetCurrentDateTime();
 __time64_t CalcTimestamp(const std::string& timestr);
 SYSTEMTIME GetSystemTime(__time64_t timestamp);
-__time64_t CalcTimestampMilli(SYSTEMTIME systime);
+__time64_t CalcTimestampMilli(const SYSTEMTIME& systime);
 /*
  * @param format
  *    0: yyyy-MM-dd

@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "DataCenter.h"
+#include "TimeRegular.h"
 #include "Utils/Utils.h"
 #include "Utils/Logger.h"
 #include <sstream>
@@ -75,6 +76,14 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 
 void CDataCenter::SaveQuote(const Quote& quote)
 {
+	// 如果在交易时间内，保存行情
+	auto it_inst = instruments_.find(quote.instrument_id);
+	if (it_inst == instruments_.end())
+		return;
+
+	if (!CTimeRegular::GetInstance().WithIn(it_inst->exchange_id, it_inst->product_id, quote.last_time))
+		return;
+
 	// 4点之前的行情都放在一起
 	__time64_t time = quote.last_time;
 	SYSTEMTIME systime = GetSystemTime(time);

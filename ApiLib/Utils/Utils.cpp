@@ -69,7 +69,7 @@ SYSTEMTIME GetSystemTime(__time64_t timestamp)
 	return systime;
 }
 
-__time64_t CalcTimestampMilli(SYSTEMTIME systime)
+__time64_t CalcTimestampMilli(const SYSTEMTIME& systime)
 {
 	struct tm tm;
 	__time64_t time_stamp;

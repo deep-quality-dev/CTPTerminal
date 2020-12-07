@@ -5,6 +5,10 @@
 #include <string>
 #include <vector>
 
+/************************************************************************/
+/* ENUM                                                                 */
+/************************************************************************/
+
 typedef enum
 {
 	CZCE = 0,
@@ -40,6 +44,29 @@ typedef enum
 	Status_NotTouched,
 	Status_Touched
 } OrderStatus;
+
+/************************************************************************/
+/* STRUCTURE                                                            */
+/************************************************************************/
+
+struct TimeDuration
+{
+	__time64_t	start_time;
+	__time64_t	end_time;
+	std::string	product_id;
+
+	TimeDuration(const std::string& product_id, __time64_t start_time, __time64_t end_time);
+
+	static TimeDuration MakeTimeDuration(const std::string& product_id, int week_day,
+		int start_hour, int start_minute,
+		int end_hour, int end_minute);
+};
+
+struct TradingDuration
+{
+	ExchangeID	exchange_id;
+	std::vector<TimeDuration> durations;
+};
 
 struct TradingAccount
 {
