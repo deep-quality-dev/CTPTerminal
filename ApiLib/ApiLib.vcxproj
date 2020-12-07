@@ -146,6 +146,7 @@
     <ClInclude Include="DataTypes\FtdcTranslator.h" />
     <ClInclude Include="DataTypes\GuiDataAction.h" />
     <ClInclude Include="MarketDataApi.h" />
+    <ClInclude Include="TimeRegular.h" />
     <ClInclude Include="TradeApi.h" />
     <ClInclude Include="QryManager.h" />
     <ClInclude Include="QuoteServerHandler.h" />
@@ -180,6 +181,7 @@
     </ClCompile>
     <ClCompile Include="ThostMdApiWrapper.cpp" />
     <ClCompile Include="ThostTradeApiWrapper.cpp" />
+    <ClCompile Include="TimeRegular.cpp" />
     <ClCompile Include="Utils\Fault.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
