@@ -45,6 +45,8 @@ protected:
 	void OnCurrentQuering(int timer_id);
 
 private:
+	std::mutex mutex_;
+
 	std::set<int> timer_ids_;
 
 	int timer_id_;

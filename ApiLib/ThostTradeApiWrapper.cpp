@@ -80,6 +80,12 @@ void CThostTradeApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 		break;
 	}
 	}
+
+	if (msg) {
+		if (msg->is_last() || !msg->GetFieldPtr<void*>()) {
+			qry_manager_->CheckQuery(msg->request_id(), msg->rsp_field()->ErrorID);
+		}
+	}
 }
 
 void CThostTradeApiWrapper::OnTimer(int timer_id)

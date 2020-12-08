@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "QryManager.h"
-
+#include "Utils/Logger.h"
+#include <sstream>
 
 CQryManager::CQryManager() : timer_id_(1024), current_query_timer_id_(99)
 {
@@ -13,11 +14,19 @@ CQryManager::~CQryManager()
 
 void CQryManager::AddQuery(const std::function<int()>& func, const std::string keyword)
 {
+	std::unique_lock<std::mutex> lk(mutex_);
+
+	Utils::Log("AddQuery: " + keyword);
+
 	if (query_tasks_.empty() && quering_tasks_.empty()) {
 		int timer_id = GetTimerId();
 		query_tasks_.push_back(QueryTask(timer_id, func, keyword));
 		callback_timer_ids_.insert(timer_id);
 		CreateTimer(timer_id, QueryRetryInterval);
+
+		std::stringstream ss;
+		ss << "AddQuery: Create timer, " << timer_id;
+		Utils::Log(ss.str());
 	}
 	else {
 		query_tasks_.push_back(QueryTask(0, func, keyword));
@@ -26,9 +35,22 @@ void CQryManager::AddQuery(const std::function<int()>& func, const std::string k
 
 void CQryManager::CheckQuery(int request_id, int error_id)
 {
+	std::unique_lock<std::mutex> lk(mutex_);
+
+	std::stringstream ss;
+	ss << "CheckQuery: " << request_id;
+	Utils::Log(ss.str());
+
 	if (!quering_tasks_.empty() && quering_tasks_.front() == request_id) {
 		if (query_tasks_.front().request_id == request_id) {
 			ExitTimer(current_query_timer_id_);
+
+			ss.clear();
+			ss << "CheckQuery: exit timer, "
+				<< "request_id = " << request_id << ","
+				<< "timer_id = " << current_query_timer_id_;
+			Utils::Log(ss.str());
+
 			if (error_id) { // FAILED to CALL Query
 				// RETRY to CALL
 				QueryTask& task = query_tasks_.front();
@@ -38,6 +60,10 @@ void CQryManager::CheckQuery(int request_id, int error_id)
 				}
 			}
 			else {
+				ss.clear();
+				ss << "CheckQuery: Remove from Query, " << request_id;
+				Utils::Log(ss.str());
+
 				query_tasks_.pop_front();
 				quering_tasks_.erase(quering_tasks_.begin());
 			}
@@ -48,6 +74,12 @@ void CQryManager::CheckQuery(int request_id, int error_id)
 		query_tasks_.front().timer_id = timer_id;
 		callback_timer_ids_.insert(timer_id);
 		CreateTimer(timer_id, QueryRetryInterval);
+
+		ss.clear();
+		ss << "CheckQuery: Create timer, "
+			<< "timer_id = " << timer_id << ", "
+			<< "request_id = " << request_id;
+		Utils::Log(ss.str());
 	}
 }
 
@@ -71,42 +103,59 @@ void CQryManager::OnTimer(int timer_id)
 
 void CQryManager::OnQueringTask(int timer_id)
 {
+	std::unique_lock<std::mutex> lk(mutex_);
+
 	ExitTimer(timer_id);
 
+	std::stringstream ss;
+	ss << "OnQueringTask: " << "exit timer, " << timer_id;
+	Utils::Log(ss.str());
+
 	if (!query_tasks_.empty()) {
-		QueryTask task = query_tasks_.front();
+		QueryTask& task = query_tasks_.front();
 		if (timer_id == task.timer_id) {
 			ASSERT_TRUE(quering_tasks_.empty());
 
-			int request_id = task.func();
-			if (request_id > 0) {
+			task.request_id = task.func();
+			if (task.request_id > 0) {
 				current_query_timer_id_ = GetTimerId();
 				CreateTimer(current_query_timer_id_, MaxQueryTimeout);
 			}
-			else if (request_id == -1) { // -1，表示网络连接失败；
+			else if (task.request_id == -1) { // -1，表示网络连接失败；
 				current_query_timer_id_ = GetTimerId();
 				CreateTimer(current_query_timer_id_, QueryRetryInterval);
 				return;
 			}
-			else if (request_id == -2) { // -2，表示未处理请求超过许可数；
+			else if (task.request_id == -2) { // -2，表示未处理请求超过许可数；
 				current_query_timer_id_ = GetTimerId();
 				CreateTimer(current_query_timer_id_, MaxQueryDelay);
 				return;
 			}
-			else if (request_id == -3) { // -3，表示每秒发送请求数超过许可数。
+			else if (task.request_id == -3) { // -3，表示每秒发送请求数超过许可数。
 				current_query_timer_id_ = GetTimerId();
 				CreateTimer(current_query_timer_id_, QueryRetryInterval);
 				return;
 			}
 
-			quering_tasks_.push_back(request_id);
+			ss.clear();
+			ss << "OnQueringTask: calling function, "
+				<< "request_id = " << task.request_id;
+			Utils::Log(ss.str());
+
+			quering_tasks_.push_back(task.request_id);
 		}
 	}
 }
 
 void CQryManager::OnCurrentQuering(int timer_id)
 {
+	std::unique_lock<std::mutex> lk(mutex_);
+
 	ExitTimer(timer_id);
+
+	std::stringstream ss;
+	ss << "OnCurrentQuering: exit timer, " << timer_id;
+	Utils::Log(ss.str());
 
 	if (!quering_tasks_.empty())
 		quering_tasks_.erase(quering_tasks_.begin());
@@ -137,6 +186,11 @@ void CQryManager::OnCurrentQuering(int timer_id)
 			CreateTimer(current_query_timer_id_, QueryRetryInterval);
 			return;
 		}
+
+		ss.clear();
+		ss << "OnCurrentQuering: calling function, "
+			<< "request_id = " << request_id;
+		Utils::Log(ss.str());
 
 		quering_tasks_.push_back(request_id);
 		task.times++;
