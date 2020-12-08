@@ -5,6 +5,7 @@
 #include "DataCenter.h"
 #include "DataTypes/GuiDataAction.h"
 #include "Utils/Utils.h"
+#include "Utils/Logger.h"
 
 
 CThostTradeApiWrapper::CThostTradeApiWrapper(CDataCenter* data_center, IGuiDataAction* gui_action) :
@@ -361,6 +362,10 @@ void CThostTradeApiWrapper::OnRspQryInstrument(CThostSpiMessage* msg)
 		Instrument inst(*f);
 		instruments_cache_.insert(inst);
 
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryInstrumentSuccess, ("查询合约成功, " + inst.instrument_id).c_str());
+		}
+
 		if (msg->is_last()) {
 			if (data_center_) {
 				data_center_->OnRtnInstruments(instruments_cache_);
@@ -369,10 +374,7 @@ void CThostTradeApiWrapper::OnRspQryInstrument(CThostSpiMessage* msg)
 			if (gui_action_) {
 				gui_action_->RefreshInstruments(instruments_cache_);
 			}
-		}
-		instruments_cache_.clear();
-		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_QryInstrumentSuccess, "查询合约成功");
+			instruments_cache_.clear();
 		}
 	}
 }

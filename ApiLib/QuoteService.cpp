@@ -5,6 +5,7 @@
 #include "ThostTradeApiWrapper.h"
 #include "Utils/IniManager.h"
 #include "Utils/Utils.h"
+#include "Utils/Logger.h"
 #include <sstream>
 
 CQuoteService::CQuoteService() : 
@@ -81,6 +82,10 @@ void CQuoteService::Initialize()
 void CQuoteService::SetInstruments(const std::set<Instrument>& instruments)
 {
 	instruments_ = instruments;
+
+	std::stringstream ss;
+	ss << "查询合约结束：总共 " << instruments.size();
+	Utils::Log(ss.str());
 
 	CheckSubscribes();
 }

@@ -26,7 +26,7 @@ public:
 	~CQryManager();
 
 	const int QueryRetryInterval = 1000;
-	const int MaxQueryTimeout = 30000;
+	const int MaxQueryTimeout = 60000;
 	const int MaxQueryDelay = 30000;
 	const int MaxRetryCount = 10;
 

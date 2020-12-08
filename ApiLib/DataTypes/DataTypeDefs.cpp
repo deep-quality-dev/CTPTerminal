@@ -275,7 +275,7 @@ Instrument::Instrument(const CThostFtdcInstrumentField& field)
 	price_tick = field.PriceTick;
 	decs = 0;
 	double tpt = price_tick;
-	for (int i = 0; tpt < 1; ++i) {
+	for (int i = 0; tpt > 0 && tpt < 1; ++i) {
 		++decs;
 		tpt *= 10;
 	}

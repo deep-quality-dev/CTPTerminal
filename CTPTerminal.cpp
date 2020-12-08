@@ -8,32 +8,8 @@
 
 // #define ONLY_QUOTE
 
-#include "QryManager.h"
-#include <math.h>
-
-int g_request_id = 0;
-int testRequestId() {
-	static int request_id = rand();
-	return g_request_id = ++request_id;
-}
-
-void testQueryManager()
-{
-	CQryManager qry_manager;
-	qry_manager.CreateThread();
-	qry_manager.AddQuery(testRequestId, "testRequestId");
-	while (!g_request_id) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
-	qry_manager.CheckQuery(g_request_id, 0);
-	std::this_thread::sleep_for(std::chrono::milliseconds(100000));
-}
-
 int main()
 {
-// 	testQueryManager();
-// 	return 0;
-
 	CQuoteService quote_service;
 	quote_service.LoadServerConfig();
 
