@@ -15,9 +15,8 @@ int main()
 	std::set<Instrument> instruments;
 	Instrument au2012(ExchangeID::SHFE, "au2012"); au2012.product_id = "au"; instruments.insert(au2012);
 	Instrument au2101(ExchangeID::SHFE, "au2101"); au2101.product_id = "au"; instruments.insert(au2101);
-	Instrument ag2012(ExchangeID::SHFE, "ag2012"); au2101.product_id = "au"; instruments.insert(ag2012);
-	Instrument ag2012(ExchangeID::SHFE, "ag2012"); au2101.product_id = "au"; instruments.insert(ag2012);
-	Instrument ag2102(ExchangeID::SHFE, "ag2102"); au2101.product_id = "au"; instruments.insert(ag2102);
+	Instrument ag2012(ExchangeID::SHFE, "ag2012"); ag2012.product_id = "au"; instruments.insert(ag2012);
+	Instrument ag2102(ExchangeID::SHFE, "ag2102"); ag2102.product_id = "au"; instruments.insert(ag2102);
 
 	quote_service.SetInstruments(instruments);
 	quote_service.data_center()->OnRtnInstruments(instruments);
