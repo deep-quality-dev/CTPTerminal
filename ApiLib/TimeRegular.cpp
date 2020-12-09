@@ -163,7 +163,7 @@ bool CTimeRegular::WithIn(const TimeDuration& td, __time64_t timestamp)
 	if (start_time.wDayOfWeek != systime.wDayOfWeek)
 		return false;
 
-	if (start_time.wHour > systime.wHour || systime.wHour > end_time.wHour)
+	if (start_time.wHour > systime.wHour || systime.wHour > (end_time.wHour == 0 ? 24 : end_time.wHour))
 		return false;
 
 	if (start_time.wHour == systime.wHour && start_time.wMinute > systime.wMinute)
