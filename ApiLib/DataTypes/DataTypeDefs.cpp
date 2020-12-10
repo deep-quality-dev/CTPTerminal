@@ -405,3 +405,42 @@ bool Order::operator<(const Order& order) const
 {
 	return key < order.key;
 }
+
+Trade::Trade(CThostFtdcTradeField& field)
+{
+	SetFromFtdcExchangeID(exchange_id, field.ExchangeID);
+	instrument_id = field.InstrumentID;
+	order_sys_id = field.OrderSysID;
+	SetFromFtdcDirection(direction, field.Direction);
+	SetFromFtdcOffsetflag(offset_flag, field.OffsetFlag);
+	price = field.Price;
+	volume = field.Volume;
+	trade_id = field.TradeID;
+	trade_date = field.TradeDate;
+	trade_time = field.TradeTime;
+}
+
+bool Trade::operator<(const Trade& trade) const
+{
+	return trade_id < trade.trade_id;
+}
+
+Position::Position(const CThostFtdcInvestorPositionField& field)
+{
+	SetFromFtdcExchangeID(exchange_id, field.ExchangeID);
+	instrument_id = field.InstrumentID;
+	SetFromFtdcPosiDirection(direction, field.PosiDirection);
+	yesterday_volume = field.Position - field.TodayPosition;
+	today_volume = field.TodayPosition;
+	position_cost = field.PositionCost;
+	commission = field.Commission;
+	profit = field.PositionProfit;
+	open_time = 0;
+}
+
+bool Position::operator<(const Position& position) const
+{
+	return open_time < position.open_time ||
+		instrument_id < position.instrument_id ||
+		direction < position.direction;
+}

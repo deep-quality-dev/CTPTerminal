@@ -18,6 +18,16 @@ public:
 
 	virtual void RefreshInstruments(const std::set<Instrument>& instruments);
 
+	virtual void RefreshPositions(const std::set<Position>& positions);
+
+	virtual void RefreshOrders(const std::set<Order>& order);
+
+	virtual void RefreshTrades(const std::set<Trade>& trade);
+
+	virtual void RefreshOrder(const Order& order);
+
+	virtual void RefreshTrade(const Trade& trade);
+
 private:
 	CQuoteService* quote_service_;
 };

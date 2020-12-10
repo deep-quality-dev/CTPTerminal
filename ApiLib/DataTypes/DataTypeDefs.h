@@ -4,6 +4,7 @@
 #include "ThostApi/ThostFtdcUserApiStruct.h"
 #include <string>
 #include <vector>
+#include <tuple>
 
 /************************************************************************/
 /* ENUM                                                                 */
@@ -227,7 +228,6 @@ struct OrderKey : public FrontSession
 
 struct Order
 {
-	Order(CThostFtdcOrderField& field);
 	std::string		instrument_id;
 	std::string		order_sys_id;	// 报单编号
 	Direction		direction;		// 买卖方向
@@ -243,11 +243,60 @@ struct Order
 	std::string		order_time;		//委托时间
 	std::string		status_msg;		// 状态信息
 	OrderKey		key;
-
+	
+	Order(CThostFtdcOrderField& field);
 	std::string Status();
 	std::string Direction();
 	std::string Offsetflag();
 	bool operator < (const Order& order) const;
 	typedef OrderKey key_type;
 	key_type GetKey() const { return key; }
+};
+
+struct OrderInsert
+{
+	std::string		instrument_id;
+	int				order_ref;
+	Direction		direction;
+	OffsetFlag		offset_flag;
+	double			limit_price;
+	int				volume;
+	bool			is_market_order;
+};
+
+struct Trade
+{
+	ExchangeID		exchange_id;
+	std::string		instrument_id;
+	Direction		direction;
+	OffsetFlag		offset_flag;
+	std::string		order_sys_id;
+	double			price;
+	int				volume;
+	std::string		trade_id;
+	std::string		trade_date;
+	std::string		trade_time;
+
+	Trade(CThostFtdcTradeField& field);
+	bool operator < (const Trade& trade) const;
+	typedef std::string key_type;
+	key_type GetKey() const { return trade_id; }
+};
+
+struct Position
+{
+	ExchangeID		exchange_id;
+	std::string		instrument_id;
+	Direction		direction;
+	int				yesterday_volume; // 上日持仓
+	int				today_volume; // 今日持仓
+	double			position_cost; // 持仓成本
+	double			commission; // 手续费
+	double			profit; // 持仓盈亏
+	__time64_t		open_time;
+
+	Position(const CThostFtdcInvestorPositionField& field);
+	bool operator < (const Position& position) const;
+	typedef std::tuple<__time64_t, std::string, Direction> key_type;
+	key_type GetKey() const { return std::make_tuple(open_time, instrument_id, direction); }
 };

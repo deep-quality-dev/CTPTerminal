@@ -2,6 +2,7 @@
 
 #include "ThostBaseWrapper.h"
 #include "TradeApi.h"
+#include <map>
 
 class CThostFtdcTraderApi;
 class CThostTraderSpiHandler;
@@ -37,13 +38,19 @@ public:
 	int ReqQryPosition();
 	int ReqQryPositionDetail();
 	int ReqQryDepthMarketData();
-
+	virtual void ReqInsertOrder(const OrderInsert& order_insert);
+	virtual void ReqQryMarginRate(const std::string& instrument_id);
+	virtual void ReqCancelOrder(const Order& order);
 
 protected:
+	int ReqQryInstrumentMarginRate(const std::string& instrument_id);
+
 	void OnRspConnected(CThostSpiMessage* msg);
 	void OnRspAuthenticate(CThostSpiMessage* msg);
 	void OnRspUserLogin(CThostSpiMessage* msg);
 	void OnRspUserLogout(CThostSpiMessage* msg);
+	void OnRtnOrder(CThostSpiMessage* msg);
+	void OnRtnTrade(CThostSpiMessage* msg);
 	void OnRspQryOrder(CThostSpiMessage* msg);
 	void OnRspQryTrade(CThostSpiMessage* msg);
 	void OnRspQryInvestorPosition(CThostSpiMessage* msg);
@@ -67,5 +74,17 @@ private:
 	int connect_timer_id_; // 检查连接的定时ID
 
 	std::set<Instrument> instruments_cache_;
+	std::set<Order> orders_cache_;
+	std::set<Trade> trades_cache_;
+	std::set<Position> positions_cache_;
+
+	std::map<OrderKey, std::string> orderkey2sysid_;
+	std::map<std::string, OrderKey> sysid2orderkey_;
+	std::set<Trade> rtn_trade_cache_;
+
+	std::set<std::string> querying_margin_rates_;
+	std::set<std::string> ready_margin_rates_;
+
+	int order_ref_;
 };
 

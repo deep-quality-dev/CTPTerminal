@@ -14,6 +14,10 @@ typedef enum API_EVENT {
 	ApiEvent_UnsubscribeMarketData,
 	ApiEvent_QryOrderFailed,
 	ApiEvent_QryOrderSuccess,
+	ApiEvent_QryTradeFailed,
+	ApiEvent_QryTradeSuccess,
+	ApiEvent_QryPositionFailed,
+	ApiEvent_QryPositionSuccess,
 	ApiEvent_QryTradingAccountFailed,
 	ApiEvent_QryTradingAccountSuccess,
 	ApiEvent_QryInstrumentFailed,
@@ -30,4 +34,14 @@ public:
 	virtual void RefreshQuotes(const std::set<Quote>& quotes) = 0;
 
 	virtual void RefreshInstruments(const std::set<Instrument>& instruments) = 0;
+
+	virtual void RefreshPositions(const std::set<Position>& positions) = 0;
+
+	virtual void RefreshOrders(const std::set<Order>& order) = 0;
+
+	virtual void RefreshTrades(const std::set<Trade>& trade) = 0;
+
+	virtual void RefreshOrder(const Order& order) = 0;
+
+	virtual void RefreshTrade(const Trade& trade) = 0;
 };

@@ -38,7 +38,7 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 		// 其他交易所的夜盘日期是下一个交易日。
 		SYSTEMTIME systime = GetSystemTime(quote.last_time);
 		if (systime.wHour >= 21) {
-			if (systime.wDayOfWeek == 0) { // month
+			if (systime.wDayOfWeek == 1) { // monday
 				systime = AddTime(systime, 0, -3);
 			}
 			else {
@@ -72,6 +72,31 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 
 	// Write Quote
 	SaveQuote(quote);
+}
+
+void CDataCenter::OnRtnPositions(const std::set<Position>& positions)
+{
+	positions_ = positions;
+}
+
+void CDataCenter::OnRspQryOrders(const std::set<Order>& orders)
+{
+
+}
+
+void CDataCenter::OnRspQryTrades(const std::set<Trade>& orders)
+{
+
+}
+
+void CDataCenter::OnRtnOrder(const Order& order)
+{
+
+}
+
+void CDataCenter::OnRtnTrade(const Trade& trade)
+{
+
 }
 
 void CDataCenter::SaveQuote(const Quote& quote)

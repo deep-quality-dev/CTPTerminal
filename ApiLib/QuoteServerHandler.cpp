@@ -38,3 +38,28 @@ void CQuoteServerHandler::RefreshInstruments(const std::set<Instrument>& instrum
 {
 	quote_service_->SetInstruments(instruments);
 }
+
+void CQuoteServerHandler::RefreshPositions(const std::set<Position>& positions)
+{
+
+}
+
+void CQuoteServerHandler::RefreshOrders(const std::set<Order>& order)
+{
+
+}
+
+void CQuoteServerHandler::RefreshTrades(const std::set<Trade>& trade)
+{
+
+}
+
+void CQuoteServerHandler::RefreshOrder(const Order& order)
+{
+
+}
+
+void CQuoteServerHandler::RefreshTrade(const Trade& trade)
+{
+
+}

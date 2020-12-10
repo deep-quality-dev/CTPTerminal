@@ -6,6 +6,7 @@
 class ITradeApi
 {
 public:
+	// 初始化
 	virtual void Initialize(const std::string& broker_id,
 		const std::string& user_id,
 		const std::string& password,
@@ -13,4 +14,10 @@ public:
 		const std::string& user_product_info,
 		const std::string& auth_code,
 		const std::string& app_id) = 0;
+
+	virtual void ReqInsertOrder(const OrderInsert& order_insert) = 0;
+	virtual void ReqCancelOrder(const Order& order) = 0;
+
+	// 查询保证金比率
+	virtual void ReqQryMarginRate(const std::string& instrument_id) = 0;
 };
