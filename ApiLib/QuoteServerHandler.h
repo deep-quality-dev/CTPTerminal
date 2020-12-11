@@ -20,9 +20,9 @@ public:
 
 	virtual void RefreshPositions(const std::set<Position>& positions);
 
-	virtual void RefreshOrders(const std::set<Order>& order);
+	virtual void RefreshOrders(const std::set<Order>& orders);
 
-	virtual void RefreshTrades(const std::set<Trade>& trade);
+	virtual void RefreshTrades(const std::set<Trade>& trades);
 
 	virtual void RefreshOrder(const Order& order);
 

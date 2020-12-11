@@ -32,6 +32,14 @@ TimeDuration TimeDuration::MakeTimeDuration(const std::string& product_id, int w
 	return TimeDuration(product_id, start_time, end_time);
 }
 
+TradingAccount::TradingAccount()
+{
+	pre_mortgage = pre_credit = pre_deposit = pre_balance = pre_margin = interest = deposit =
+		withdraw = frozen_margin = frozen_cash = frozen_commission = curr_margin = cash_in = commission =
+		close_profit = position_profit = balance = available = withdraw_quota = reserve = credit =
+		mortgage = exchange_margin = delivery_margin = exchange_delivery_margin = 0;
+}
+
 TradingAccount::TradingAccount(CThostFtdcTradingAccountField& field)
 {
 	///经纪公司代码
@@ -231,6 +239,11 @@ Quote::Quote(const CThostFtdcDepthMarketDataField& field)
 	}
 }
 
+Quote::Quote(const std::string& instrument_id)
+{
+	this->instrument_id = instrument_id;
+}
+
 bool Quote::operator<(const Quote& quote) const
 {
 	return instrument_id < quote.instrument_id ||
@@ -326,6 +339,18 @@ bool OrderKey::operator<(const OrderKey& ov) const
 	return order_ref < ov.order_ref || FrontSession::operator<(ov);
 }
 
+Order::Order()
+{
+	direction = Buy;
+	offset_flag = Open;
+	request_id = 0;
+	price = 0;
+	volume = 0;
+	volume_traded = 0;
+	volume_remained = 0;
+	broker_order_seq = 0;
+}
+
 Order::Order(CThostFtdcOrderField& field)
 {
 	key = OrderKey(field.FrontID, field.SessionID, atoi(field.OrderRef));
@@ -336,7 +361,7 @@ Order::Order(CThostFtdcOrderField& field)
 	price = field.LimitPrice;
 	volume = field.VolumeTotalOriginal;
 	volume_traded = field.VolumeTraded;
-	volume_total = field.VolumeTotal;
+	volume_remained = field.VolumeTotal;
 	broker_order_seq = field.BrokerOrderSeq;
 	SetFromFtdcOrderStatus(status, field.OrderStatus);
 	order_day = field.InsertDate;
@@ -345,60 +370,9 @@ Order::Order(CThostFtdcOrderField& field)
 	request_id = field.RequestID;
 }
 
-std::string Order::Status()
+Order::Order(OrderKey& ref) : key(ref)
 {
-	switch (status)
-	{
-	case Status_AllTraded:
-		return "全部成交";
-	case Status_Canceled:
-		return "已撤单";
-	case Status_PartTraded:
-		return "部分成交";
-	case Status_UnTraded:
-		return "未成交";
-	case Status_NotTouched:
-		return "未触发";
-	case Status_Touched:
-		return "已触发";
-	case Status_Error:
-		return "错误";
-	default:
-		return "未知";
-	}
-}
 
-std::string Order::Direction()
-{
-	if (direction == Buy)
-	{
-		return "买";
-	}
-	return "卖";
-}
-
-std::string Order::Offsetflag()
-{
-	if (offset_flag == Open)
-	{
-		return "开仓";
-	}
-	else if (offset_flag == Close)
-	{
-		return "平仓";
-	}
-	else if (offset_flag == CloseToday)
-	{
-		return "平今";
-	}
-	else if (offset_flag == CloseYestoday)
-	{
-		return "平昨";
-	}
-	else
-	{
-		return "强平";
-	}
 }
 
 bool Order::operator<(const Order& order) const
@@ -435,12 +409,21 @@ Position::Position(const CThostFtdcInvestorPositionField& field)
 	position_cost = field.PositionCost;
 	commission = field.Commission;
 	profit = field.PositionProfit;
-	open_time = 0;
+}
+
+Position::Position(const std::string& instrument_id, Direction direction)
+{
+	this->instrument_id = instrument_id;
+	this->direction = direction;
+	yesterday_volume = 0;
+	today_volume = 0;
+	position_cost = 0;
+	commission = 0;
+	profit = 0;
 }
 
 bool Position::operator<(const Position& position) const
 {
-	return open_time < position.open_time ||
-		instrument_id < position.instrument_id ||
+	return instrument_id < position.instrument_id ||
 		direction < position.direction;
 }

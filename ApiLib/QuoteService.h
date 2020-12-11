@@ -2,11 +2,13 @@
 
 #include "DataCenter.h"
 #include "DataTypes/GuiDataAction.h"
+#include "MarketDataApi.h"
+#include "TradeApi.h"
 #include <vector>
 #include <memory>
 
-class IMarketDataApi;
-class ITradeApi;
+// class IMarketDataApi;
+// class ITradeApi;
 
 class CQuoteService
 {
@@ -19,6 +21,9 @@ public:
 	}
 	IGuiDataAction* gui_action() {
 		return gui_action_.get();
+	}
+	ITradeApi* trade_api() {
+		return trade_api_.get();
 	}
 
 	void LoadServerConfig();

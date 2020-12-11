@@ -71,6 +71,7 @@ struct TradingDuration
 
 struct TradingAccount
 {
+	TradingAccount();
 	TradingAccount(CThostFtdcTradingAccountField& field);
 
 	///经纪公司代码
@@ -166,6 +167,7 @@ struct Quote
 	__time64_t		last_time;
 
 	Quote(const CThostFtdcDepthMarketDataField& field);
+	Quote(const std::string& instrument_id);
 
 	bool operator < (const Quote& quote) const;
 	Quote& operator=(const Quote& quote);
@@ -236,7 +238,7 @@ struct Order
 	double			price;			// 价格
 	int				volume;			// 数量
 	int				volume_traded;	// 今成交数量
-	int				volume_total;	// 剩余数量
+	int				volume_remained;	// 剩余数量
 	int				broker_order_seq; // 经纪公司报单编号
 	OrderStatus		status;			// 报单状态
 	std::string		order_day;		// 报单日期
@@ -244,10 +246,9 @@ struct Order
 	std::string		status_msg;		// 状态信息
 	OrderKey		key;
 	
+	Order();
 	Order(CThostFtdcOrderField& field);
-	std::string Status();
-	std::string Direction();
-	std::string Offsetflag();
+	Order(OrderKey& ref);
 	bool operator < (const Order& order) const;
 	typedef OrderKey key_type;
 	key_type GetKey() const { return key; }
@@ -273,7 +274,7 @@ struct Trade
 	std::string		order_sys_id;
 	double			price;
 	int				volume;
-	std::string		trade_id;
+	std::string		trade_id;			// 成交编号
 	std::string		trade_date;
 	std::string		trade_time;
 
@@ -293,10 +294,11 @@ struct Position
 	double			position_cost; // 持仓成本
 	double			commission; // 手续费
 	double			profit; // 持仓盈亏
-	__time64_t		open_time;
 
 	Position(const CThostFtdcInvestorPositionField& field);
+	Position(const std::string& instrument_id, Direction direction);
+	int volume() const { return today_volume + yesterday_volume; }
 	bool operator < (const Position& position) const;
-	typedef std::tuple<__time64_t, std::string, Direction> key_type;
-	key_type GetKey() const { return std::make_tuple(open_time, instrument_id, direction); }
+	typedef std::pair<std::string, Direction> key_type;
+	key_type GetKey() const { return std::make_pair(instrument_id, direction); }
 };

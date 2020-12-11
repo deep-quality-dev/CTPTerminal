@@ -37,9 +37,9 @@ public:
 
 	virtual void RefreshPositions(const std::set<Position>& positions) = 0;
 
-	virtual void RefreshOrders(const std::set<Order>& order) = 0;
+	virtual void RefreshOrders(const std::set<Order>& orders) = 0;
 
-	virtual void RefreshTrades(const std::set<Trade>& trade) = 0;
+	virtual void RefreshTrades(const std::set<Trade>& trades) = 0;
 
 	virtual void RefreshOrder(const Order& order) = 0;
 

@@ -15,7 +15,22 @@ public:
 		const std::string& auth_code,
 		const std::string& app_id) = 0;
 
+	virtual int ReqQryTradingAccount() = 0;
+
+	virtual int ReqQryAllInstrument() = 0;
+
+	virtual int ReqQryOrder() = 0;
+
+	virtual int ReqQryTrade() = 0;
+
+	virtual int ReqQryPosition() = 0;
+
+	virtual int ReqQryPositionDetail() = 0;
+
+	virtual int ReqQryDepthMarketData() = 0;
+
 	virtual void ReqInsertOrder(const OrderInsert& order_insert) = 0;
+
 	virtual void ReqCancelOrder(const Order& order) = 0;
 
 	// 查询保证金比率

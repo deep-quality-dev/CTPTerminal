@@ -3,7 +3,9 @@
 
 #include "stdafx.h"
 #include "QuoteService.h"
+#include "Utils/Logger.h"
 #include <set>
+#include <sstream>
 #include <iostream>
 
 // #define ONLY_QUOTE
@@ -69,6 +71,43 @@ int main()
 	quote_service.SetSubscribeProducts(subscribe_products);
 
 	quote_service.Initialize();
+
+	while (true) {
+		system("cls");
+
+		Utils::Log("1: ReqQryTradingAccount");
+		Utils::Log("2: ReqQryOrder");
+		Utils::Log("3: ReqQryTrade");
+		Utils::Log("4: ReqQryPosition");
+		Utils::Log("5: ReqQryMarginRate");
+
+		int choose;
+		std::cin >> choose;
+		switch (choose) {
+		case 1:
+			quote_service.trade_api()->ReqQryTradingAccount();
+			break;
+
+		case 2:
+			quote_service.trade_api()->ReqQryOrder();
+			break;
+
+		case 3:
+			quote_service.trade_api()->ReqQryTrade();
+			break;
+
+		case 4:
+			quote_service.trade_api()->ReqQryPosition();
+			break;
+
+		case 5:
+			quote_service.trade_api()->ReqQryMarginRate("au2102");
+			break;
+
+		default:
+			break;
+		}
+	}
 
 	char c;
 	std::cin >> c;

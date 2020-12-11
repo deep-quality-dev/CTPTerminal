@@ -355,6 +355,9 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 		front_id_ = f->FrontID;
 		session_id_ = f->SessionID;
 		order_ref_ = atoi(f->MaxOrderRef);
+		if (data_center_) {
+			data_center_->SetOrderRef(order_ref_);
+		}
 
 		logined_ = true;
 
@@ -535,7 +538,24 @@ void CThostTradeApiWrapper::OnRspQryInvestorPosition(CThostSpiMessage* msg)
 	}
 	else {
 		Position position(*f);
-		positions_cache_.insert(position);
+		if (position.volume()) {
+			auto it_position = std::find_if(positions_cache_.begin(), positions_cache_.end(),
+				[&position](const Position& pp) {
+				return pp.instrument_id == position.instrument_id && pp.direction == position.direction;
+			});
+			if (it_position != positions_cache_.end()) {
+				positions_cache_.insert(position);
+			}
+			else {
+				position.position_cost = 
+					(it_position->position_cost * it_position->volume() + 
+						position.position_cost * position.volume()) / (it_position->volume() + position.volume());
+				position.today_volume += it_position->today_volume;
+				position.yesterday_volume += it_position->yesterday_volume;
+				positions_cache_.erase(position);
+				positions_cache_.insert(position);
+			}
+		}
 
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent_QryPositionSuccess,
