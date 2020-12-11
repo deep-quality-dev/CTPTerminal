@@ -303,6 +303,8 @@ void CThostTradeApiWrapper::ReqCancelOrder(const Order& order)
 
 int CThostTradeApiWrapper::ReqQryInstrumentMarginRate(const std::string& instrument_id)
 {
+	Utils::Log("ReqQryInstrumentMarginRate << " + instrument_id);
+
 	CThostFtdcQryInstrumentMarginRateField field;
 	memset(&field, 0, sizeof(CThostFtdcQryInstrumentMarginRateField));
 	safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
@@ -731,7 +733,7 @@ void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg
 		}
 
 		if (gui_action_) {
-			gui_action_->RefreshPositions(position_details_cache_);
+			gui_action_->RefreshPositionDetails(position_details_cache_);
 		}
 		positions_cache_.clear();
 	}
