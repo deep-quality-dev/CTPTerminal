@@ -16,7 +16,7 @@ TimeDuration TimeDuration::MakeTimeDuration(const std::string& product_id, int w
 	SYSTEMTIME systime = { 0 };
 	systime.wYear = 2001;
 	systime.wMonth = 1;
-	systime.wDay = week_day - 1;
+	systime.wDay = week_day;
 	systime.wHour = start_hour;
 	systime.wMinute = start_minute;
 	systime.wSecond = 0;
