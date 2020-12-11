@@ -20,7 +20,7 @@ public:
 		OnRspQryTrade,
 		OnRspQryInvestorPosition,
 		OnRspQryTradingAccount,
-
+		OnRspQryInstrumentMarginRate,
 		OnRspQryInstrument,
 		OnRspQryDepthMarketData,
 		OnRspQryInvestorPositionDetail

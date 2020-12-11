@@ -18,7 +18,10 @@ public:
 
 	virtual void RefreshInstruments(const std::set<Instrument>& instruments);
 
+	virtual void RefreshInstrumentMarginRate(const InstrumentMarginRate& margin_rate);
+
 	virtual void RefreshPositions(const std::set<Position>& positions);
+	virtual void RefreshPositionDetails(const std::set<Position>& positions);
 
 	virtual void RefreshOrders(const std::set<Order>& orders);
 

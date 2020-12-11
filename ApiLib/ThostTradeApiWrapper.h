@@ -55,6 +55,7 @@ protected:
 	void OnRspQryTrade(CThostSpiMessage* msg);
 	void OnRspQryInvestorPosition(CThostSpiMessage* msg);
 	void OnRspQryTradingAccount(CThostSpiMessage* msg);
+	void OnRspQryInstrumentMarginRate(CThostSpiMessage* msg);
 	void OnRspQryInstrument(CThostSpiMessage* msg);
 	void OnRspQryDepthMarketData(CThostSpiMessage* msg);
 	void OnRspQryInvestorPositionDetail(CThostSpiMessage* msg);
@@ -77,6 +78,7 @@ private:
 	std::set<Order> orders_cache_;
 	std::set<Trade> trades_cache_;
 	std::set<Position> positions_cache_;
+	std::set<Position> position_details_cache_;
 
 	std::map<OrderKey, std::string> orderkey2sysid_;
 	std::map<std::string, OrderKey> sysid2orderkey_;

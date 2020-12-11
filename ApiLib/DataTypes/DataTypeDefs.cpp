@@ -324,6 +324,16 @@ bool Instrument::operator<(const Instrument& Instrument) const
 	return instrument_id < Instrument.instrument_id;
 }
 
+InstrumentMarginRate::InstrumentMarginRate()
+{
+	margin_ratio_by_money = margin_ratio_by_volume = 0;
+}
+
+bool InstrumentMarginRate::operator<(const InstrumentMarginRate& rate) const
+{
+	return instrument_id < rate.instrument_id || direction < rate.direction;
+}
+
 bool FrontSession::operator==(const FrontSession& ov) const
 {
 	return front_id == ov.front_id && session_id == ov.session_id;
@@ -418,6 +428,18 @@ Position::Position(const std::string& instrument_id, Direction direction)
 	yesterday_volume = 0;
 	today_volume = 0;
 	position_cost = 0;
+	commission = 0;
+	profit = 0;
+}
+
+Position::Position(const CThostFtdcInvestorPositionDetailField& field)
+{
+	SetFromFtdcExchangeID(exchange_id, field.ExchangeID);
+	instrument_id = field.InstrumentID;
+	SetFromFtdcPosiDirection(direction, field.Direction);
+	yesterday_volume = 0;
+	today_volume = field.Volume;
+	position_cost = field.OpenPrice;
 	commission = 0;
 	profit = 0;
 }

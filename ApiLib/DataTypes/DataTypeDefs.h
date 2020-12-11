@@ -209,6 +209,17 @@ struct Instrument
 	key_type GetKey() const { return instrument_id; }
 };
 
+struct InstrumentMarginRate
+{
+	std::string		instrument_id;
+	Direction		direction;
+	double			margin_ratio_by_money;
+	double			margin_ratio_by_volume;
+
+	InstrumentMarginRate();
+	bool operator < (const InstrumentMarginRate& rate) const;
+};
+
 struct FrontSession
 {
 	int front_id;
@@ -296,6 +307,7 @@ struct Position
 	double			profit; // 持仓盈亏
 
 	Position(const CThostFtdcInvestorPositionField& field);
+	Position(const CThostFtdcInvestorPositionDetailField& field);
 	Position(const std::string& instrument_id, Direction direction);
 	int volume() const { return today_volume + yesterday_volume; }
 	bool operator < (const Position& position) const;

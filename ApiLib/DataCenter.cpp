@@ -75,6 +75,11 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 	SaveQuote(quote);
 }
 
+void CDataCenter::OnRspInstrumentMarginRate(const InstrumentMarginRate& margin_rate)
+{
+	margin_rates_.insert(margin_rate);
+}
+
 void CDataCenter::OnRspTradeAccount(const TradingAccount& account)
 {
 	trading_account_ = account;
@@ -83,6 +88,11 @@ void CDataCenter::OnRspTradeAccount(const TradingAccount& account)
 void CDataCenter::OnRtnPositions(const std::set<Position>& positions)
 {
 	positions_ = positions;
+}
+
+void CDataCenter::OnRtnPositionDetails(const std::set<Position>& positions)
+{
+	position_details_ = positions;
 }
 
 void CDataCenter::OnRspQryOrders(const std::set<Order>& orders)

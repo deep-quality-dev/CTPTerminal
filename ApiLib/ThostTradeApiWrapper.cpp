@@ -67,6 +67,11 @@ void CThostTradeApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 		OnRspQryTradingAccount(msg);
 		break;
 	}
+	case SPI::OnRspQryInstrumentMarginRate:
+	{
+		OnRspQryInstrumentMarginRate(msg);
+		break;
+	}
 	case SPI::OnRspQryInstrument:
 	{
 		OnRspQryInstrument(msg);
@@ -239,6 +244,7 @@ int CThostTradeApiWrapper::ReqQryPositionDetail()
 	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
 	int reqid = GetRequestId();
 	trader_api_->ReqQryInvestorPositionDetail(&field, reqid);
+	position_details_cache_.clear();
 	return reqid;
 }
 
@@ -471,8 +477,9 @@ void CThostTradeApiWrapper::OnRspQryOrder(CThostSpiMessage* msg)
 				msg->rsp_field()->ErrorID,
 				msg->rsp_field()->ErrorMsg);
 		}
+		return;
 	}
-	else {
+	if (f) {
 		Order order(*f);
 		orders_cache_.insert(order);
 
@@ -480,17 +487,17 @@ void CThostTradeApiWrapper::OnRspQryOrder(CThostSpiMessage* msg)
 			gui_action_->OnLoginProcess(ApiEvent_QryOrderSuccess,
 				("查询报单列表成功, " + order.instrument_id).c_str());
 		}
+	}
 
-		if (msg->is_last()) {
-			if (data_center_) {
-				data_center_->OnRspQryOrders(orders_cache_);
-			}
-
-			if (gui_action_) {
-				gui_action_->RefreshOrders(orders_cache_);
-			}
-			orders_cache_.clear();
+	if (msg->is_last()) {
+		if (data_center_) {
+			data_center_->OnRspQryOrders(orders_cache_);
 		}
+
+		if (gui_action_) {
+			gui_action_->RefreshOrders(orders_cache_);
+		}
+		orders_cache_.clear();
 	}
 }
 
@@ -504,8 +511,9 @@ void CThostTradeApiWrapper::OnRspQryTrade(CThostSpiMessage* msg)
 				msg->rsp_field()->ErrorID,
 				msg->rsp_field()->ErrorMsg);
 		}
+		return;
 	}
-	else {
+	if (f) {
 		Trade trade(*f);
 		trades_cache_.insert(trade);
 
@@ -513,17 +521,17 @@ void CThostTradeApiWrapper::OnRspQryTrade(CThostSpiMessage* msg)
 			gui_action_->OnLoginProcess(ApiEvent_QryTradeSuccess,
 				("查询成交列表成功, " + trade.instrument_id).c_str());
 		}
+	}
 
-		if (msg->is_last()) {
-			if (data_center_) {
-				data_center_->OnRspQryTrades(trades_cache_);
-			}
-
-			if (gui_action_) {
-				gui_action_->RefreshTrades(trades_cache_);
-			}
-			trades_cache_.clear();
+	if (msg->is_last()) {
+		if (data_center_) {
+			data_center_->OnRspQryTrades(trades_cache_);
 		}
+
+		if (gui_action_) {
+			gui_action_->RefreshTrades(trades_cache_);
+		}
+		trades_cache_.clear();
 	}
 }
 
@@ -531,12 +539,15 @@ void CThostTradeApiWrapper::OnRspQryInvestorPosition(CThostSpiMessage* msg)
 {
 	CThostFtdcInvestorPositionField* f = msg->GetFieldPtr<CThostFtdcInvestorPositionField>();
 	if (msg->rsp_field()->ErrorID) {
-		gui_action_->OnLoginProcess(ApiEvent_QryPositionFailed,
-			"查询持仓失败",
-			msg->rsp_field()->ErrorID,
-			msg->rsp_field()->ErrorMsg);
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryPositionFailed,
+				"查询持仓失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
+		return;
 	}
-	else {
+	if (f) {
 		Position position(*f);
 		if (position.volume()) {
 			auto it_position = std::find_if(positions_cache_.begin(), positions_cache_.end(),
@@ -561,17 +572,17 @@ void CThostTradeApiWrapper::OnRspQryInvestorPosition(CThostSpiMessage* msg)
 			gui_action_->OnLoginProcess(ApiEvent_QryPositionSuccess,
 				("查询持仓成功, " + position.instrument_id).c_str());
 		}
+	}
 
-		if (msg->is_last()) {
-			if (data_center_) {
-				data_center_->OnRtnPositions(positions_cache_);
-			}
-
-			if (gui_action_) {
-				gui_action_->RefreshPositions(positions_cache_);
-			}
-			positions_cache_.clear();
+	if (msg->is_last()) {
+		if (data_center_) {
+			data_center_->OnRtnPositions(positions_cache_);
 		}
+
+		if (gui_action_) {
+			gui_action_->RefreshPositions(positions_cache_);
+		}
+		positions_cache_.clear();
 	}
 }
 
@@ -579,10 +590,12 @@ void CThostTradeApiWrapper::OnRspQryTradingAccount(CThostSpiMessage* msg)
 {
 	CThostFtdcTradingAccountField* f = msg->GetFieldPtr<CThostFtdcTradingAccountField>();
 	if (msg->rsp_field()->ErrorID) {
-		gui_action_->OnLoginProcess(ApiEvent_QryTradingAccountFailed, 
-			"查询帐户资金失败",
-			msg->rsp_field()->ErrorID,
-			msg->rsp_field()->ErrorMsg);
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryTradingAccountFailed,
+				"查询帐户资金失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
 	}
 	else {
 		TradingAccount account(*f);
@@ -595,33 +608,76 @@ void CThostTradeApiWrapper::OnRspQryTradingAccount(CThostSpiMessage* msg)
 	}
 }
 
+void CThostTradeApiWrapper::OnRspQryInstrumentMarginRate(CThostSpiMessage* msg)
+{
+	CThostFtdcInstrumentMarginRateField * f = msg->GetFieldPtr<CThostFtdcInstrumentMarginRateField >();
+	if (msg->rsp_field()->ErrorID) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryInstrumentMarginRateFailed,
+				"查询合约保证金率失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
+		return;
+	}
+	if (f) {
+		InstrumentMarginRate sell_margin_rate;
+		InstrumentMarginRate buy_margin_rate;
+		sell_margin_rate.instrument_id = f->InstrumentID;
+		buy_margin_rate.instrument_id = f->InstrumentID;
+		sell_margin_rate.direction = Sell;
+		buy_margin_rate.direction = Buy;
+		sell_margin_rate.margin_ratio_by_money = f->ShortMarginRatioByMoney;
+		sell_margin_rate.margin_ratio_by_volume = f->ShortMarginRatioByVolume;
+		buy_margin_rate.margin_ratio_by_money = f->LongMarginRatioByMoney;
+		buy_margin_rate.margin_ratio_by_volume = f->LongMarginRatioByVolume;
+
+		if (data_center_) {
+			data_center_->OnRspInstrumentMarginRate(sell_margin_rate);
+			data_center_->OnRspInstrumentMarginRate(buy_margin_rate);
+		}
+
+		if (gui_action_) {
+			gui_action_->RefreshInstrumentMarginRate(sell_margin_rate);
+			gui_action_->RefreshInstrumentMarginRate(buy_margin_rate);
+		}
+	}
+
+	if (gui_action_) {
+		gui_action_->OnLoginProcess(ApiEvent_QryInstrumentSuccess, "查询合约保证金率成功");
+	}
+}
+
 void CThostTradeApiWrapper::OnRspQryInstrument(CThostSpiMessage* msg)
 {
 	CThostFtdcInstrumentField* f = msg->GetFieldPtr<CThostFtdcInstrumentField>();
 	if (msg->rsp_field()->ErrorID) {
-		gui_action_->OnLoginProcess(ApiEvent_QryInstrumentFailed,
-			"查询合约失败",
-			msg->rsp_field()->ErrorID,
-			msg->rsp_field()->ErrorMsg);
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryInstrumentFailed,
+				"查询合约失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
+		return;
 	}
-	else {
+	if (f) {
 		Instrument inst(*f);
 		instruments_cache_.insert(inst);
 
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent_QryInstrumentSuccess, ("查询合约成功, " + inst.instrument_id).c_str());
 		}
+	}
 
-		if (msg->is_last()) {
-			if (data_center_) {
-				data_center_->OnRtnInstruments(instruments_cache_);
-			}
-
-			if (gui_action_) {
-				gui_action_->RefreshInstruments(instruments_cache_);
-			}
-			instruments_cache_.clear();
+	if (msg->is_last()) {
+		if (data_center_) {
+			data_center_->OnRtnInstruments(instruments_cache_);
 		}
+
+		if (gui_action_) {
+			gui_action_->RefreshInstruments(instruments_cache_);
+		}
+		instruments_cache_.clear();
 	}
 }
 
@@ -632,5 +688,51 @@ void CThostTradeApiWrapper::OnRspQryDepthMarketData(CThostSpiMessage* msg)
 
 void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg)
 {
+	CThostFtdcInvestorPositionDetailField* f = msg->GetFieldPtr<CThostFtdcInvestorPositionDetailField>();
+	if (msg->rsp_field()->ErrorID) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryPositionDetailFailed,
+				"查询持仓明细失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
+		return;
+	}
+	if (f) {
+		Position position(*f);
+		if (position.volume()) {
+			auto it_position = std::find_if(position_details_cache_.begin(), position_details_cache_.end(),
+				[&position](const Position& pp) {
+				return pp.instrument_id == position.instrument_id && pp.direction == position.direction;
+			});
+			if (it_position != position_details_cache_.end()) {
+				position_details_cache_.insert(position);
+			}
+			else {
+				position.position_cost =
+					(it_position->position_cost * it_position->volume() +
+						position.position_cost * position.volume()) / (it_position->volume() + position.volume());
+				position.today_volume += it_position->today_volume;
+				position.yesterday_volume += it_position->yesterday_volume;
+				position_details_cache_.erase(position);
+				position_details_cache_.insert(position);
+			}
+		}
 
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryPositionDetailSuccess,
+				("查询持仓成功, " + position.instrument_id).c_str());
+		}
+	}
+
+	if (msg->is_last()) {
+		if (data_center_) {
+			data_center_->OnRtnPositionDetails(position_details_cache_);
+		}
+
+		if (gui_action_) {
+			gui_action_->RefreshPositions(position_details_cache_);
+		}
+		positions_cache_.clear();
+	}
 }

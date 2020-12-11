@@ -69,9 +69,58 @@ void CQuoteServerHandler::RefreshInstruments(const std::set<Instrument>& instrum
 	quote_service_->SetInstruments(instruments);
 }
 
+void CQuoteServerHandler::RefreshInstrumentMarginRate(const InstrumentMarginRate& margin_rate)
+{
+	Utils::Log("合约保证金率通知 >>");
+
+	std::stringstream ss;
+	ss << "合约名称, " << margin_rate.instrument_id << std::endl
+		<< "买卖方向, " << CFormatter::GetInstance().Direction2string(margin_rate.direction) << std::endl
+		<< "保证金率, " << margin_rate.margin_ratio_by_money << std::endl
+		<< "保证金费, " << margin_rate.margin_ratio_by_volume << std::endl;
+	Utils::Log(ss.str());
+
+	Utils::Log("合约保证金率通知 <<");
+}
+
 void CQuoteServerHandler::RefreshPositions(const std::set<Position>& positions)
 {
+	Utils::Log("查询投资者持仓 >>");
+	for (auto it_position = positions.begin(); it_position != positions.end(); it_position++) {
+		std::stringstream ss;
+		ss << "===============" << std::endl
+			<< "交易所代码, " << CFormatter::GetInstance().ExchangeID2string(it_position->exchange_id) << std::endl
+			<< "合约名称, " << it_position->instrument_id << std::endl
+			<< "买卖方向, " << CFormatter::GetInstance().Direction2string(it_position->direction) << std::endl
+			<< "上日持仓, " << it_position->yesterday_volume << std::endl
+			<< "今日持仓, " << it_position->today_volume << std::endl
+			<< "价格, " << it_position->position_cost << std::endl
+			<< "手续费, " << it_position->commission << std::endl
+			<< "持仓盈亏, " << it_position->profit << std::endl;
 
+		Utils::Log(ss.str());
+	}
+	Utils::Log("查询投资者持仓 <<");
+}
+
+void CQuoteServerHandler::RefreshPositionDetails(const std::set<Position>& positions)
+{
+	Utils::Log("查询投资者持仓明细 >>");
+	for (auto it_position = positions.begin(); it_position != positions.end(); it_position++) {
+		std::stringstream ss;
+		ss << "===============" << std::endl
+			<< "交易所代码, " << CFormatter::GetInstance().ExchangeID2string(it_position->exchange_id) << std::endl
+			<< "合约名称, " << it_position->instrument_id << std::endl
+			<< "买卖方向, " << CFormatter::GetInstance().Direction2string(it_position->direction) << std::endl
+			<< "上日持仓, " << it_position->yesterday_volume << std::endl
+			<< "今日持仓, " << it_position->today_volume << std::endl
+			<< "价格, " << it_position->position_cost << std::endl
+			<< "手续费, " << it_position->commission << std::endl
+			<< "持仓盈亏, " << it_position->profit << std::endl;
+
+		Utils::Log(ss.str());
+	}
+	Utils::Log("查询投资者持仓明细 <<");
 }
 
 void CQuoteServerHandler::RefreshOrders(const std::set<Order>& orders)

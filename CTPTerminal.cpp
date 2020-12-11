@@ -73,8 +73,6 @@ int main()
 	quote_service.Initialize();
 
 	while (true) {
-		system("cls");
-
 		Utils::Log("1: ReqQryTradingAccount");
 		Utils::Log("2: ReqQryOrder");
 		Utils::Log("3: ReqQryTrade");
@@ -104,7 +102,7 @@ int main()
 			quote_service.trade_api()->ReqQryMarginRate("au2102");
 			break;
 
-		default:
+		case 0:
 			break;
 		}
 	}
