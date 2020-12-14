@@ -325,6 +325,7 @@ struct PositionDetail
 	double			margin;
 	double			profit;
 
+	PositionDetail(const std::string& trade_id);
 	PositionDetail(const CThostFtdcInvestorPositionDetailField& field);
 	bool operator < (const PositionDetail& position) const;
 	typedef std::string key_type;

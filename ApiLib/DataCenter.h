@@ -4,14 +4,23 @@
 #include <map>
 #include <set>
 
+class ITradeApi;
+
 class CDataCenter
 {
 public:
 	CDataCenter();
 	~CDataCenter();
 
+	void set_trade_api(ITradeApi* trade_api) {
+		trade_api_ = trade_api;
+	}
+
 	std::set<Position> positions() {
 		return positions_;
+	}
+	std::set<PositionDetail> position_details() {
+		return position_details_;
 	}
 
 	void SetOrderRef(int order_ref) {
@@ -37,6 +46,8 @@ protected:
 	double GetMarketPrice(const std::string& instrument_id, Direction direction);
 
 protected:
+	ITradeApi* trade_api_;
+
 	std::set<Instrument> instruments_;
 	std::map<std::string, QuoteDeque> quotes_;
 	std::set<InstrumentMarginRate> margin_rates_;

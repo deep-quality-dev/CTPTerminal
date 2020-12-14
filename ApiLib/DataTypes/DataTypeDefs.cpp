@@ -450,6 +450,15 @@ PositionDetail::PositionDetail(const CThostFtdcInvestorPositionDetailField& fiel
 	profit = field.PositionProfitByTrade;
 }
 
+PositionDetail::PositionDetail(const std::string& tid)
+{
+	trade_id = tid;
+	volume = 0;
+	open_price = 0;
+	margin = 0;
+	profit = 0;
+}
+
 bool PositionDetail::operator<(const PositionDetail& position) const
 {
 	return trade_id < position.trade_id;

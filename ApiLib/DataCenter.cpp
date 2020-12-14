@@ -1,12 +1,13 @@
 ﻿#include "stdafx.h"
 #include "DataCenter.h"
 #include "TimeRegular.h"
+#include "TradeApi.h"
 #include "Utils/Utils.h"
 #include "Utils/Logger.h"
 #include <sstream>
 
 
-CDataCenter::CDataCenter()
+CDataCenter::CDataCenter() : trade_api_(0)
 {
 	order_ref_ = 0;
 }
@@ -132,9 +133,6 @@ void CDataCenter::OnRtnOrder(const Order& order)
 			InsertOrder(order.instrument_id, order.offset_flag, order.direction, price, order.volume_remained);
 		}
 	}
-	else {
-
-	}
 }
 
 void CDataCenter::OnRtnTrade(const Trade& trade)
@@ -165,6 +163,16 @@ void CDataCenter::OnRtnTrade(const Trade& trade)
 					position.position_cost = trade.price;
 					positions_.insert(position);
 				}
+
+				PositionDetail position_detail(trade.trade_id);
+				position_detail.exchange_id = trade.exchange_id;
+				position_detail.instrument_id = trade.instrument_id;
+				position_detail.direction = trade.direction;
+				position_detail.volume = trade.volume;
+				position_detail.open_price = trade.price;
+				position_detail.margin = 0;
+				position_detail.profit = 0;
+				position_details_.insert(position_detail);
 			}
 			else {
 				int volume_traded = trade.volume;
@@ -193,6 +201,20 @@ void CDataCenter::OnRtnTrade(const Trade& trade)
 						}
 					}
 				}
+
+				for (auto it_position_detail = position_details_.begin();
+					it_position_detail != position_details_.end(); it_position_detail++) {
+					if (it_position_detail->trade_id == trade.trade_id) {
+						position_details_.erase(*it_position_detail);
+
+						PositionDetail position_detail = *it_position_detail;
+						position_detail.volume -= trade.volume;
+						if (position_detail.volume > 0) {
+							position_details_.insert(position_detail);
+						}
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -207,6 +229,10 @@ void CDataCenter::InsertOrder(const std::string& instrument_id, OffsetFlag offse
 	order_insert.limit_price = price;
 	order_insert.volume = volume;
 	order_insert.order_ref = ++order_ref_;
+
+	if (trade_api_) {
+		trade_api_->ReqInsertOrder(order_insert);
+	}
 }
 
 void CDataCenter::SaveQuote(const Quote& quote)
