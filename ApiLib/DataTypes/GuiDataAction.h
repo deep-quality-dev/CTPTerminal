@@ -42,7 +42,7 @@ public:
 	virtual void RefreshInstrumentMarginRate(const InstrumentMarginRate& margin_rate) = 0;
 
 	virtual void RefreshPositions(const std::set<Position>& positions) = 0;
-	virtual void RefreshPositionDetails(const std::set<Position>& positions) = 0;
+	virtual void RefreshPositionDetails(const std::set<PositionDetail>& positions) = 0;
 
 	virtual void RefreshOrders(const std::set<Order>& orders) = 0;
 

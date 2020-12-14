@@ -432,20 +432,25 @@ Position::Position(const std::string& instrument_id, Direction direction)
 	profit = 0;
 }
 
-Position::Position(const CThostFtdcInvestorPositionDetailField& field)
-{
-	SetFromFtdcExchangeID(exchange_id, field.ExchangeID);
-	instrument_id = field.InstrumentID;
-	SetFromFtdcPosiDirection(direction, field.Direction);
-	yesterday_volume = 0;
-	today_volume = field.Volume;
-	position_cost = field.OpenPrice;
-	commission = 0;
-	profit = 0;
-}
-
 bool Position::operator<(const Position& position) const
 {
 	return instrument_id < position.instrument_id ||
 		direction < position.direction;
+}
+
+PositionDetail::PositionDetail(const CThostFtdcInvestorPositionDetailField& field)
+{
+	SetFromFtdcExchangeID(exchange_id, field.ExchangeID);
+	instrument_id = field.InstrumentID;
+	SetFromFtdcDirection(direction, field.Direction);
+	trade_id = field.TradeID;
+	volume = field.Volume;
+	open_price = field.OpenPrice;
+	margin = field.Margin;
+	profit = field.PositionProfitByTrade;
+}
+
+bool PositionDetail::operator<(const PositionDetail& position) const
+{
+	return trade_id < position.trade_id;
 }

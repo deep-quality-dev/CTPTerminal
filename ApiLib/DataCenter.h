@@ -23,7 +23,7 @@ public:
 	void OnRspInstrumentMarginRate(const InstrumentMarginRate& margin_rate);
 	void OnRspTradeAccount(const TradingAccount& account);
 	void OnRtnPositions(const std::set<Position>& positions);
-	void OnRtnPositionDetails(const std::set<Position>& positions);
+	void OnRtnPositionDetails(const std::set<PositionDetail>& positions);
 	void OnRspQryOrders(const std::set<Order>& orders);
 	void OnRspQryTrades(const std::set<Trade>& orders);
 	void OnRtnOrder(const Order& order);
@@ -42,7 +42,7 @@ protected:
 	std::set<InstrumentMarginRate> margin_rates_;
 	TradingAccount trading_account_;
 	std::set<Position> positions_;
-	std::set<Position> position_details_;
+	std::set<PositionDetail> position_details_;
 
 	std::map<int, Order> order_ref2order_;
 	std::map<std::string, int> order_sysid2ref_;

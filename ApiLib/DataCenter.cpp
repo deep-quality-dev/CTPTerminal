@@ -90,7 +90,7 @@ void CDataCenter::OnRtnPositions(const std::set<Position>& positions)
 	positions_ = positions;
 }
 
-void CDataCenter::OnRtnPositionDetails(const std::set<Position>& positions)
+void CDataCenter::OnRtnPositionDetails(const std::set<PositionDetail>& positions)
 {
 	position_details_ = positions;
 }

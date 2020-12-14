@@ -307,10 +307,26 @@ struct Position
 	double			profit; // 持仓盈亏
 
 	Position(const CThostFtdcInvestorPositionField& field);
-	Position(const CThostFtdcInvestorPositionDetailField& field);
 	Position(const std::string& instrument_id, Direction direction);
 	int volume() const { return today_volume + yesterday_volume; }
 	bool operator < (const Position& position) const;
 	typedef std::pair<std::string, Direction> key_type;
 	key_type GetKey() const { return std::make_pair(instrument_id, direction); }
+};
+
+struct PositionDetail
+{
+	ExchangeID		exchange_id;
+	std::string		instrument_id;
+	Direction		direction;
+	std::string		trade_id;
+	int				volume;
+	double			open_price;
+	double			margin;
+	double			profit;
+
+	PositionDetail(const CThostFtdcInvestorPositionDetailField& field);
+	bool operator < (const PositionDetail& position) const;
+	typedef std::string key_type;
+	key_type GetKey() const { return trade_id; }
 };

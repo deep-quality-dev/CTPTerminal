@@ -701,25 +701,8 @@ void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg
 		return;
 	}
 	if (f) {
-		Position position(*f);
-		if (position.volume()) {
-			auto it_position = std::find_if(position_details_cache_.begin(), position_details_cache_.end(),
-				[&position](const Position& pp) {
-				return pp.instrument_id == position.instrument_id && pp.direction == position.direction;
-			});
-			if (it_position != position_details_cache_.end()) {
-				position_details_cache_.insert(position);
-			}
-			else {
-				position.position_cost =
-					(it_position->position_cost * it_position->volume() +
-						position.position_cost * position.volume()) / (it_position->volume() + position.volume());
-				position.today_volume += it_position->today_volume;
-				position.yesterday_volume += it_position->yesterday_volume;
-				position_details_cache_.erase(position);
-				position_details_cache_.insert(position);
-			}
-		}
+		PositionDetail position(*f);
+		position_details_cache_.insert(position);
 
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent_QryPositionDetailSuccess,
@@ -735,6 +718,6 @@ void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg
 		if (gui_action_) {
 			gui_action_->RefreshPositionDetails(position_details_cache_);
 		}
-		positions_cache_.clear();
+		position_details_cache_.clear();
 	}
 }

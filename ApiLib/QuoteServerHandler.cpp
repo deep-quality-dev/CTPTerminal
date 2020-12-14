@@ -103,7 +103,7 @@ void CQuoteServerHandler::RefreshPositions(const std::set<Position>& positions)
 	Utils::Log("查询投资者持仓 <<");
 }
 
-void CQuoteServerHandler::RefreshPositionDetails(const std::set<Position>& positions)
+void CQuoteServerHandler::RefreshPositionDetails(const std::set<PositionDetail>& positions)
 {
 	Utils::Log("查询投资者持仓明细 >>");
 	for (auto it_position = positions.begin(); it_position != positions.end(); it_position++) {
@@ -112,10 +112,10 @@ void CQuoteServerHandler::RefreshPositionDetails(const std::set<Position>& posit
 			<< "交易所代码, " << CFormatter::GetInstance().ExchangeID2string(it_position->exchange_id) << std::endl
 			<< "合约名称, " << it_position->instrument_id << std::endl
 			<< "买卖方向, " << CFormatter::GetInstance().Direction2string(it_position->direction) << std::endl
-			<< "上日持仓, " << it_position->yesterday_volume << std::endl
-			<< "今日持仓, " << it_position->today_volume << std::endl
-			<< "价格, " << it_position->position_cost << std::endl
-			<< "手续费, " << it_position->commission << std::endl
+			<< "成交编号, " << it_position->trade_id << std::endl
+			<< "今日持仓, " << it_position->volume << std::endl
+			<< "价格, " << it_position->open_price << std::endl
+			<< "保证金, " << it_position->margin << std::endl
 			<< "持仓盈亏, " << it_position->profit << std::endl;
 
 		Utils::Log(ss.str());

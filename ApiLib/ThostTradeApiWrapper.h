@@ -78,7 +78,7 @@ private:
 	std::set<Order> orders_cache_;
 	std::set<Trade> trades_cache_;
 	std::set<Position> positions_cache_;
-	std::set<Position> position_details_cache_;
+	std::set<PositionDetail> position_details_cache_;
 
 	std::map<OrderKey, std::string> orderkey2sysid_;
 	std::map<std::string, OrderKey> sysid2orderkey_;
