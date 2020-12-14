@@ -10,6 +10,7 @@ typedef enum API_EVENT {
 	ApiEvent_AuthenticationSuccess,
 	ApiEvent_LoginFailed,
 	ApiEvent_LoginSuccess,
+	ApiEvent_LogoutSuccess,
 	ApiEvent_SubscribeMarketData,
 	ApiEvent_UnsubscribeMarketData,
 	ApiEvent_QryOrderFailed,

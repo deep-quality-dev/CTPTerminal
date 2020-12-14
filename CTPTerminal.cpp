@@ -71,6 +71,7 @@ int main()
 	quote_service.SetSubscribeProducts(subscribe_products);
 
 	quote_service.Initialize();
+	quote_service.Login();
 
 	while (true) {
 		Utils::Log("1: ReqQryTradingAccount");
@@ -109,6 +110,8 @@ int main()
 
 	char c;
 	std::cin >> c;
+
+	quote_service.Logout();
 
     return 0;
 }

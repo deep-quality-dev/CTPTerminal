@@ -28,6 +28,10 @@ public:
 
 	void LoadServerConfig();
 	void Initialize();
+	
+	void Login();
+	void Logout();
+
 	void SetInstruments(const std::set<Instrument>& instruments);
 
 	void SetSubscribeProducts(const std::set<std::string>& products);

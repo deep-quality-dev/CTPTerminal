@@ -24,8 +24,12 @@ public:
 		const std::string& password,
 		const std::vector<std::string>& fronts);
 
+	virtual void Login();
+	virtual void Logout();
+
 	void ReqConnect();
 	void ReqUserLogin();
+	void ReqUserLogout();
 	virtual void ReqSubscribeQuote(std::set<std::string> instruments);
 
 protected:
@@ -47,6 +51,7 @@ private:
 
 	bool connected_, logined_;
 	int login_times_;
+	bool force_logout_;
 
 	int connect_timer_id_; // 检查连接的定时ID
 

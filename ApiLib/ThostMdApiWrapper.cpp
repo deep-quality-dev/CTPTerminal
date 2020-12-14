@@ -10,7 +10,7 @@
 
 CThostMdApiWrapper::CThostMdApiWrapper(CDataCenter* data_center, IGuiDataAction* gui_action) : 
 	CThostBaseWrapper(data_center, gui_action),
-	md_api_(NULL), connected_(false), logined_(false), login_times_(0), 
+	md_api_(NULL), connected_(false), logined_(false), login_times_(0), force_logout_(false),
 	connect_timer_id_(100)
 {
 }
@@ -100,6 +100,11 @@ void CThostMdApiWrapper::OnTimer(int timer_id)
 void CThostMdApiWrapper::Initialize(const std::string& broker_id, const std::string& user_id, const std::string& password, const std::vector<std::string>& fronts)
 {
 	CThostBaseWrapper::Initialize(broker_id, user_id, password, fronts);
+}
+
+void CThostMdApiWrapper::Login()
+{
+	force_logout_ = false;
 
 	if (!connected_) {
 		ReqConnect();
@@ -109,10 +114,27 @@ void CThostMdApiWrapper::Initialize(const std::string& broker_id, const std::str
 	}
 }
 
+void CThostMdApiWrapper::Logout()
+{
+	force_logout_ = true;
+
+	if (logined_) {
+		ReqUserLogout();
+	}
+	else if (connected_) {
+		if (md_api_) {
+			md_api_->Release();
+			md_api_ = NULL;
+		}
+		connected_ = false;
+	}
+}
+
 void CThostMdApiWrapper::ReqConnect()
 {
 	if (md_api_) {
 		md_api_->Release();
+		md_api_ = NULL;
 	}
 
 	std::string path = GetTempPath(user_id());
@@ -139,6 +161,16 @@ void CThostMdApiWrapper::ReqUserLogin()
 	safe_strcpy(login_field.UserProductInfo, "EasyTrader", sizeof(TThostFtdcProductInfoType));
 	int reqid = GetRequestId();
 	md_api_->ReqUserLogin(&login_field, reqid);
+}
+
+void CThostMdApiWrapper::ReqUserLogout()
+{
+	CThostFtdcUserLogoutField logout_field;
+	memset(&logout_field, 0, sizeof(CThostFtdcReqUserLoginField));
+	safe_strcpy(logout_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	safe_strcpy(logout_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
+	int reqid = GetRequestId();
+	md_api_->ReqUserLogout(&logout_field, reqid);
 }
 
 void CThostMdApiWrapper::ReqSubscribeQuote(std::set<std::string> instruments)
@@ -247,7 +279,14 @@ void CThostMdApiWrapper::OnFrontDisconnected(CThostSpiMessage* msg)
 {
 	connected_ = false;
 	if (gui_action_) {
-		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_Disconnected, "行情服务器连接掉线");
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_Disconnected, "交易服务器断链");
+	}
+
+	if (force_logout_) {
+		if (md_api_) {
+			md_api_->Release();
+			md_api_ = NULL;
+		}
 	}
 }
 
@@ -284,7 +323,10 @@ void CThostMdApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 
 void CThostMdApiWrapper::OnRspUserLogout(CThostSpiMessage* msg)
 {
-
+	logined_ = false;
+	if (gui_action_) {
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LogoutSuccess, "行情服务器登录失败");
+	}
 }
 
 void CThostMdApiWrapper::OnRspSubMarketData(CThostSpiMessage* msg)

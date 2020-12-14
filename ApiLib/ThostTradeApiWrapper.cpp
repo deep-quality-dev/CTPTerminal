@@ -12,7 +12,7 @@
 
 CThostTradeApiWrapper::CThostTradeApiWrapper(CDataCenter* data_center, IGuiDataAction* gui_action) :
 	CThostBaseWrapper(data_center, gui_action),
-	trader_api_(NULL), connected_(false), authenticated_(false), logined_(false), login_times_(0),
+	trader_api_(NULL), connected_(false), authenticated_(false), logined_(false), login_times_(0), force_logout_(false),
 	connect_timer_id_(100),
 	qry_manager_(new CQryManager())
 {
@@ -30,6 +30,11 @@ void CThostTradeApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 	case SPI::OnTradeFrontConnected:
 	{
 		OnRspConnected(msg);
+		break;
+	}
+	case SPI::OnTradeFrontDisconnected:
+	{
+		OnRspDisconnected(msg);
 		break;
 	}
 	case SPI::OnRspAuthenticate:
@@ -124,6 +129,11 @@ void CThostTradeApiWrapper::Initialize(const std::string& broker_id,
 		}
 		return;
 	}
+}
+
+void CThostTradeApiWrapper::Login()
+{
+	force_logout_ = false;
 
 	if (!connected_) {
 		ReqConnect();
@@ -136,10 +146,27 @@ void CThostTradeApiWrapper::Initialize(const std::string& broker_id,
 	}
 }
 
+void CThostTradeApiWrapper::Logout()
+{
+	force_logout_ = true;
+
+	if (logined_) {
+		ReqUserLogout();
+	}
+	else if (connected_) {
+		if (trader_api_) {
+			trader_api_->Release();
+			trader_api_ = NULL;
+		}
+		connected_ = false;
+	}
+}
+
 void CThostTradeApiWrapper::ReqConnect()
 {
 	if (trader_api_) {
 		trader_api_->Release();
+		trader_api_ = NULL;
 	}
 
 	std::string path = GetTempPath(user_id());
@@ -182,6 +209,16 @@ void CThostTradeApiWrapper::ReqUserLogin()
 	safe_strcpy(login_field.UserProductInfo, "EasyTrader", sizeof(TThostFtdcProductInfoType));
 	int reqid = GetRequestId();
 	trader_api_->ReqUserLogin(&login_field, reqid);
+}
+
+void CThostTradeApiWrapper::ReqUserLogout()
+{
+	CThostFtdcUserLogoutField logout_field;
+	memset(&logout_field, 0, sizeof(CThostFtdcReqUserLoginField));
+	safe_strcpy(logout_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	safe_strcpy(logout_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
+	int reqid = GetRequestId();
+	trader_api_->ReqUserLogout(&logout_field, reqid);
 }
 
 int CThostTradeApiWrapper::ReqQryTradingAccount()
@@ -327,6 +364,19 @@ void CThostTradeApiWrapper::OnRspConnected(CThostSpiMessage* msg)
 	ReqAuthenticate();
 }
 
+void CThostTradeApiWrapper::OnRspDisconnected(CThostSpiMessage* msg)
+{
+	connected_ = false;
+	if (gui_action_) {
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_Disconnected, "交易服务器断链");
+	}
+
+// 	if (trader_api_) {
+// 		trader_api_->Release();
+// 		trader_api_ = NULL;
+// 	}
+}
+
 void CThostTradeApiWrapper::OnRspAuthenticate(CThostSpiMessage* msg)
 {
 	if (msg->rsp_field()->ErrorID) {
@@ -381,7 +431,10 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 
 void CThostTradeApiWrapper::OnRspUserLogout(CThostSpiMessage* msg)
 {
-
+	logined_ = false;
+	if (gui_action_) {
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LogoutSuccess, "交易服务器登录失败");
+	}
 }
 
 void CThostTradeApiWrapper::OnRtnOrder(CThostSpiMessage* msg)

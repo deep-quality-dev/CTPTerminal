@@ -15,6 +15,10 @@ public:
 		const std::string& auth_code,
 		const std::string& app_id) = 0;
 
+	virtual void Login() = 0;
+
+	virtual void Logout() = 0;
+
 	virtual int ReqQryTradingAccount() = 0;
 
 	virtual int ReqQryAllInstrument() = 0;

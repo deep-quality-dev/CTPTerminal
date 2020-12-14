@@ -79,6 +79,22 @@ void CQuoteService::Initialize()
 	InitMdWrappers();
 }
 
+void CQuoteService::Login()
+{
+	for (auto it_md = md_apis_.begin(); it_md != md_apis_.end(); it_md++) {
+		(*it_md)->Login();
+	}
+	trade_api_->Login();
+}
+
+void CQuoteService::Logout()
+{
+	for (auto it_md = md_apis_.begin(); it_md != md_apis_.end(); it_md++) {
+		(*it_md)->Logout();
+	}
+	trade_api_->Logout();
+}
+
 void CQuoteService::SetInstruments(const std::set<Instrument>& instruments)
 {
 	instruments_ = instruments;

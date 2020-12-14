@@ -28,9 +28,13 @@ public:
 		const std::string& auth_code,
 		const std::string& app_id);
 
+	virtual void Login();
+	virtual void Logout();
+
 	void ReqConnect();
 	void ReqAuthenticate();
 	void ReqUserLogin();
+	void ReqUserLogout();
 	virtual int ReqQryTradingAccount();
 	virtual int ReqQryAllInstrument();
 	virtual int ReqQryOrder();
@@ -46,6 +50,7 @@ protected:
 	int ReqQryInstrumentMarginRate(const std::string& instrument_id);
 
 	void OnRspConnected(CThostSpiMessage* msg);
+	void OnRspDisconnected(CThostSpiMessage* msg);
 	void OnRspAuthenticate(CThostSpiMessage* msg);
 	void OnRspUserLogin(CThostSpiMessage* msg);
 	void OnRspUserLogout(CThostSpiMessage* msg);
@@ -71,6 +76,7 @@ private:
 
 	bool connected_, authenticated_, logined_;
 	int login_times_;
+	bool force_logout_;
 
 	int connect_timer_id_; // 检查连接的定时ID
 
