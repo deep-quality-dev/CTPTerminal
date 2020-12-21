@@ -426,6 +426,8 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 		if (!login_times_) { // 第一次登录
 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryAllInstrument, this), "查询合约");
 		}
+
+		login_times_++;
 	}
 }
 
