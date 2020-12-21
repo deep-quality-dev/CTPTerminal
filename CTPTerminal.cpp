@@ -59,15 +59,24 @@ int main()
 #endif
 
 	std::set<std::string> subscribe_products;
-	// 上金所
+	// 上期所
 	subscribe_products.insert("rb"); // 螺纹
 	subscribe_products.insert("ru"); // 橡胶
 	subscribe_products.insert("cu"); // 铜
 	subscribe_products.insert("au"); // 黄金
 	subscribe_products.insert("ag"); // 白银
+	subscribe_products.insert("fu"); // 燃油
+	subscribe_products.insert("MA"); // 甲醇
+	subscribe_products.insert("bu"); // 沥青
+	subscribe_products.insert("hc"); // 热卷
 	// 大商所
 	subscribe_products.insert("m"); // 豆粕
 	subscribe_products.insert("i"); // 铁矿
+	subscribe_products.insert("p"); // 棕榈
+	subscribe_products.insert("y"); // 豆油
+	subscribe_products.insert("c"); // 玉米
+	subscribe_products.insert("j"); // 焦炭
+	subscribe_products.insert("jm"); // 焦煤
 	quote_service.SetSubscribeProducts(subscribe_products);
 
 	quote_service.Initialize();
