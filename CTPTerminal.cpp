@@ -64,6 +64,8 @@ int main()
 		Utils::Log("3: ReqQryTrade");
 		Utils::Log("4: ReqQryPosition");
 		Utils::Log("5: ReqQryMarginRate");
+		Utils::Log("6: ReqInsertMarketOrder(Open/Buy/1)");
+		Utils::Log("7: ReqInsertMarketOrder(Close/Sell/1)");
 
 		int choose;
 		std::cin >> choose;
@@ -86,6 +88,14 @@ int main()
 
 		case 5:
 			quote_service.trade_api()->ReqQryMarginRate("au2102");
+			break;
+
+		case 6:
+			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Open, Direction::Buy, 1);
+			break;
+
+		case 7:
+			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Close, Direction::Sell, 1);
 			break;
 
 		case 0:
