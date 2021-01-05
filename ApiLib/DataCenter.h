@@ -6,11 +6,20 @@
 #include <mutex>
 #include <functional>
 
+class IGuiDataAction;
+
 class CDataCenter
 {
 public:
 	CDataCenter();
 	~CDataCenter();
+
+	IGuiDataAction* gui_action() {
+		return gui_action_;
+	}
+	void set_gui_action(IGuiDataAction* gui_action) {
+		gui_action_ = gui_action;
+	}
 
 	std::set<Position> positions() {
 		return positions_;
@@ -58,6 +67,8 @@ protected:
 	void CalcPositionProfit();
 
 protected:
+	IGuiDataAction* gui_action_;
+
 	OnQuoteCallback quote_callback_;
 	OnTradeCallback ontrade_callback_;
 	OnTradeAccountCallback onaccount_callback_;

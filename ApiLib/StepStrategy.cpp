@@ -1,6 +1,9 @@
 ﻿#include "stdafx.h"
 #include "StepStrategy.h"
+#include "DataTypes/Formatter.h"
 #include "Utils/Utils.h"
+#include "Utils/Logger.h"
+#include <sstream>
 
 
 #define REGISTER_OPEN_SIGNAL_FUNC(direction, name, func, instrument_id1, instrument_id2, param1, param2, param3) \
@@ -95,11 +98,29 @@ void CStepStrategy::OnTradeCallback(int order_ref, const Trade& trade)
 	if (it != pending_order_refs_.end()) {
 		pending_order_refs_.erase(order_ref);
 	}
+
+	std::set<Position> positions = data_center()->positions();
+	Utils::Log("查询投资者持仓 >>");
+	for (auto it_position = positions.begin(); it_position != positions.end(); it_position++) {
+		std::stringstream ss;
+		ss << "===============" << std::endl
+			<< "交易所代码, " << CFormatter::GetInstance().ExchangeID2string(it_position->exchange_id) << std::endl
+			<< "合约名称, " << it_position->instrument_id << std::endl
+			<< "买卖方向, " << CFormatter::GetInstance().Direction2string(it_position->direction) << std::endl
+			<< "上日持仓, " << it_position->yesterday_volume << std::endl
+			<< "今日持仓, " << it_position->today_volume << std::endl
+			<< "价格, " << it_position->position_cost << std::endl
+			<< "手续费, " << it_position->commission << std::endl
+			<< "持仓盈亏, " << it_position->profit << std::endl;
+
+		Utils::Log(ss.str());
+	}
+	Utils::Log("查询投资者持仓 <<");
 }
 
 void CStepStrategy::OnTradeAccountCallback(const TradingAccount& account)
 {
-
+	
 }
 
 bool CStepStrategy::PushQuote(const Quote& quote)

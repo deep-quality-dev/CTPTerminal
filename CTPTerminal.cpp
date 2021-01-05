@@ -20,6 +20,7 @@ int main()
 	CQuoteService quote_service;
 	quote_service.set_data_center(&data_center);
 	quote_service.set_gui_action(&quote_service);
+	data_center.set_gui_action(&quote_service);
 
 	quote_service.Login();
 
@@ -36,6 +37,7 @@ int main()
 	subscribe_products.insert("MA"); // ¼×´¼
 	subscribe_products.insert("bu"); // Á¤Çà
 	subscribe_products.insert("hc"); // ÈÈ¾í
+	subscribe_products.insert("ni"); // »¦Äø
 	// ´óÉÌËù
 	subscribe_products.insert("m"); // ¶¹ÆÉ
 	subscribe_products.insert("i"); // Ìú¿ó
@@ -44,6 +46,7 @@ int main()
 	subscribe_products.insert("c"); // ÓñÃ×
 	subscribe_products.insert("j"); // ½¹Ì¿
 	subscribe_products.insert("jm"); // ½¹Ãº
+	subscribe_products.insert("v"); // PVC
 
 #else
 	CArbitrageStrategy strategy(&data_center, quote_service.trade_api());
@@ -55,40 +58,40 @@ int main()
 	subscribe_products.insert("au"); // »Æ½ð
 	quote_service.SetSubscribeProducts(subscribe_products);
 
-// 	while (true) {
-// 		Utils::Log("1: ReqQryTradingAccount");
-// 		Utils::Log("2: ReqQryOrder");
-// 		Utils::Log("3: ReqQryTrade");
-// 		Utils::Log("4: ReqQryPosition");
-// 		Utils::Log("5: ReqQryMarginRate");
-// 
-// 		int choose;
-// 		std::cin >> choose;
-// 		switch (choose) {
-// 		case 1:
-// 			quote_service.trade_api()->ReqQryTradingAccount();
-// 			break;
-// 
-// 		case 2:
-// 			quote_service.trade_api()->ReqQryOrder();
-// 			break;
-// 
-// 		case 3:
-// 			quote_service.trade_api()->ReqQryTrade();
-// 			break;
-// 
-// 		case 4:
-// 			quote_service.trade_api()->ReqQryPosition();
-// 			break;
-// 
-// 		case 5:
-// 			quote_service.trade_api()->ReqQryMarginRate("au2102");
-// 			break;
-// 
-// 		case 0:
-// 			break;
-// 		}
-// 	}
+	while (true) {
+		Utils::Log("1: ReqQryTradingAccount");
+		Utils::Log("2: ReqQryOrder");
+		Utils::Log("3: ReqQryTrade");
+		Utils::Log("4: ReqQryPosition");
+		Utils::Log("5: ReqQryMarginRate");
+
+		int choose;
+		std::cin >> choose;
+		switch (choose) {
+		case 1:
+			quote_service.trade_api()->ReqQryTradingAccount();
+			break;
+
+		case 2:
+			quote_service.trade_api()->ReqQryOrder();
+			break;
+
+		case 3:
+			quote_service.trade_api()->ReqQryTrade();
+			break;
+
+		case 4:
+			quote_service.trade_api()->ReqQryPosition();
+			break;
+
+		case 5:
+			quote_service.trade_api()->ReqQryMarginRate("au2102");
+			break;
+
+		case 0:
+			break;
+		}
+	}
 
 #endif
 

@@ -1,12 +1,13 @@
 ﻿#include "stdafx.h"
 #include "DataCenter.h"
+#include "GuiDataAction.h"
 #include "TimeRegular.h"
 #include "Utils/Logger.h"
 #include "Utils/Utils.h"
 #include <sstream>
 
 
-CDataCenter::CDataCenter()
+CDataCenter::CDataCenter() : gui_action_(NULL)
 {
 	order_ref_ = 0;
 }
@@ -218,6 +219,10 @@ void CDataCenter::OnRtnTrade(const Trade& trade)
 
 			if (ontrade_callback_) {
 				ontrade_callback_(order_ref, trade);
+			}
+
+			if (gui_action_) {
+				gui_action_->RefreshPositions(positions_);
 			}
 		}
 	}
