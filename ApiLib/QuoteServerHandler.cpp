@@ -177,7 +177,9 @@ void CQuoteServerHandler::RefreshOrder(const Order& order)
 	Utils::Log("报单通知 >>");
 
 	std::stringstream ss;
-	ss << "报单编号, " << order.order_sys_id << std::endl
+	ss << "前置编号, " << order.GetKey().front_id << std::endl
+		<< "会话编号, " << order.GetKey().session_id << std::endl
+		<< "报单编号, " << order.order_sys_id << std::endl
 		<< "合约名称, " << order.instrument_id << std::endl
 		<< "买卖方向, " << CFormatter::GetInstance().Direction2string(order.direction) << std::endl
 		<< "组合开平标志, " << CFormatter::GetInstance().OffsetFlag2string(order.offset_flag) << std::endl

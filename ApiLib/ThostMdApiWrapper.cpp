@@ -335,6 +335,20 @@ void CThostMdApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 		}
 	}
 	else {
+		CThostFtdcRspUserLoginField* f = msg->GetFieldPtr<CThostFtdcRspUserLoginField>();
+
+		Utils::Log("登录行情服务器成功 >>");
+		std::stringstream ss;
+		ss << "交易日: " << f->TradingDay << std::endl
+			<< "登录成功时间: " << f->LoginTime << std::endl
+			<< "经纪公司代码: " << f->BrokerID << std::endl
+			<< "用户代码: " << f->UserID << std::endl
+			<< "前置编号: " << f->FrontID << std::endl
+			<< "会话编号: " << f->SessionID << std::endl
+			<< "最大报单引用: " << f->MaxOrderRef << std::endl;
+		Utils::Log(ss.str());
+		Utils::Log("登录行情服务器成功 <<");
+
 		logined_ = true;
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_MdLoginSuccess, "登录行情服务器成功");

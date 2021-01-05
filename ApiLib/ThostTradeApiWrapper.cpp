@@ -496,6 +496,18 @@ void CThostTradeApiWrapper::OnRspAuthenticate(CThostSpiMessage* msg)
 		}
 	}
 	else {
+		CThostFtdcRspAuthenticateField* f = msg->GetFieldPtr<CThostFtdcRspAuthenticateField>();
+
+		Utils::Log("交易终端认证成功 >>");
+		std::stringstream ss;
+		ss << "经纪公司代码: " << f->BrokerID << std::endl
+			<< "用户代码: " << f->UserID << std::endl
+			<< "用户端产品信息: " << f->UserProductInfo << std::endl
+			<< "App代码: " << f->AppID << std::endl
+			<< "App类型: " << f->AppType << std::endl;
+		Utils::Log(ss.str());
+		Utils::Log("交易终端认证成功 <<");
+
 		authenticated_ = true;
 		if (gui_action_) {
 			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_AuthenticationSuccess, "交易终端认证成功");
@@ -517,6 +529,18 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 	}
 	else {
 		CThostFtdcRspUserLoginField* f = msg->GetFieldPtr<CThostFtdcRspUserLoginField>();
+
+		Utils::Log("登录交易服务器成功 >>");
+		std::stringstream ss;
+		ss << "交易日: " << f->TradingDay << std::endl
+			<< "登录成功时间: " << f->LoginTime << std::endl
+			<< "经纪公司代码: " << f->BrokerID << std::endl
+			<< "用户代码: " << f->UserID << std::endl
+			<< "前置编号: " << f->FrontID << std::endl
+			<< "会话编号: " << f->SessionID << std::endl
+			<< "最大报单引用: " << f->MaxOrderRef << std::endl;
+		Utils::Log(ss.str());
+		Utils::Log("登录交易服务器成功 <<");
 
 		front_id_ = f->FrontID;
 		session_id_ = f->SessionID;
