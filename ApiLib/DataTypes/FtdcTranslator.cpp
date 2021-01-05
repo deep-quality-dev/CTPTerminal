@@ -138,16 +138,16 @@ void GetFromTickplusExchangeID(TThostFtdcExchangeIDType& ftdc, const ExchangeID&
 	switch (exchangeid)
 	{
 	case CZCE:
-		safe_strcpy(ftdc, "CZCE", sizeof(TThostFtdcExchangeIDType));
+		Utils::safe_strcpy(ftdc, "CZCE", sizeof(TThostFtdcExchangeIDType));
 		break;
 	case DCE:
-		safe_strcpy(ftdc, "DCE", sizeof(TThostFtdcExchangeIDType));
+		Utils::safe_strcpy(ftdc, "DCE", sizeof(TThostFtdcExchangeIDType));
 		break;
 	case SHFE:
-		safe_strcpy(ftdc, "SHFE", sizeof(TThostFtdcExchangeIDType));
+		Utils::safe_strcpy(ftdc, "SHFE", sizeof(TThostFtdcExchangeIDType));
 		break;
 	case CFFEX:
-		safe_strcpy(ftdc, "CFFEX", sizeof(TThostFtdcExchangeIDType));
+		Utils::safe_strcpy(ftdc, "CFFEX", sizeof(TThostFtdcExchangeIDType));
 		break;
 	default:
 		ASSERT_TRUE(FALSE);

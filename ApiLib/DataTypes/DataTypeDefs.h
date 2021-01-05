@@ -50,6 +50,22 @@ typedef enum
 /* STRUCTURE                                                            */
 /************************************************************************/
 
+struct ServerConfig
+{
+	std::string broker_id;	// 经纪公司代码
+	std::vector<std::string> addresses;
+	std::string user_id;	// 用户代码
+	std::string password;
+};
+struct TradeServerConfig : public ServerConfig
+{
+	std::string user_product_info; // 用户端产品信息
+	std::string auth_code;	// 认证码
+	std::string app_id;		// App代码
+};
+struct MarketDataServerConfig : public ServerConfig
+{};
+
 struct TimeDuration
 {
 	__time64_t	start_time;
@@ -259,6 +275,7 @@ struct Order
 	
 	Order();
 	Order(CThostFtdcOrderField& field);
+	Order(CThostFtdcInputOrderField& field, OrderKey& key, int error_id, const std::string& error_msg);
 	Order(OrderKey& ref);
 	bool operator < (const Order& order) const;
 	typedef OrderKey key_type;

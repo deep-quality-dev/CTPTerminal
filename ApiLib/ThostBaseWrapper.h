@@ -19,11 +19,8 @@ public:
 
 		timer_id_ = 1024;
 		request_id_ = 0;
-
-		CreateThread();
 	}
 	~CThostBaseWrapper() {
-		ExitThread();
 	}
 
 	int GetTimerId() {

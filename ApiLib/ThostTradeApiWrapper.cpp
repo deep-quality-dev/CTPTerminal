@@ -3,24 +3,29 @@
 #include "ThostSpiHandler.h"
 #include "QryManager.h"
 #include "DataCenter.h"
-#include "DataTypes/GuiDataAction.h"
+#include "GuiDataAction.h"
 #include "DataTypes/FtdcTranslator.h"
+#include "DataTypes/Formatter.h"
 #include "Utils/Utils.h"
 #include "Utils/Logger.h"
 #include <sstream>
 
+#pragma comment(lib, "ThostApi/thosttraderapi_se.lib")
+// #pragma comment(lib, "Site/CPP/ChnFutureSite/ThostApi/thosttraderapi_se.lib")
 
 CThostTradeApiWrapper::CThostTradeApiWrapper(CDataCenter* data_center, IGuiDataAction* gui_action) :
 	CThostBaseWrapper(data_center, gui_action),
-	trader_api_(NULL), connected_(false), authenticated_(false), logined_(false), login_times_(0), force_logout_(false),
-	connect_timer_id_(100),
-	qry_manager_(new CQryManager())
+	trader_api_(NULL), trader_spi_handler_(NULL), qry_manager_(NULL),
+	connected_(false), authenticated_(false), logined_(false), login_times_(0), force_logout_(false),
+	connect_timer_id_(100)
 {
+	logout_event_ = ::CreateEventW(NULL, FALSE, FALSE, L"TRADE_LOGOUT_EVENT");
 }
 
 
 CThostTradeApiWrapper::~CThostTradeApiWrapper()
 {
+	::CloseHandle(logout_event_);
 }
 
 void CThostTradeApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
@@ -92,6 +97,31 @@ void CThostTradeApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 		OnRspQryInvestorPositionDetail(msg);
 		break;
 	}
+	case SPI::OnRspQrySettlementInfoConfirm:
+	{
+		OnRspQrySettlementInfoConfirm(msg);
+		break;
+	}
+	case SPI::OnRtnOrder:
+	{
+		OnRtnOrder(msg);
+		break;
+	}
+	case SPI::OnRtnTrade:
+	{
+		OnRtnTrade(msg);
+		break;
+	}
+	case SPI::OnErrRtnOrderInsert:
+	{
+		OnErrRtnOrderInsert(msg);
+		break;
+	}
+	case SPI::OnRspOrderInsert:
+	{
+		OnRspOrderInsert(msg);
+		break;
+	}
 	}
 
 	if (msg) {
@@ -106,19 +136,26 @@ void CThostTradeApiWrapper::OnTimer(int timer_id)
 	if (timer_id == connect_timer_id_) {
 		ExitTimer(timer_id);
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_ConnectTimeout, "交易服务器链接超时");
+			gui_action_->OnLoginProcess(ApiEvent_TradeConnectTimeout, "交易服务器链接超时");
 		}
 		return;
 	}
 }
 
-void CThostTradeApiWrapper::Initialize(const std::string& broker_id, 
-	const std::string& user_id, const std::string& password, const std::vector<std::string> fronts,
+void CThostTradeApiWrapper::Initialize(const std::string& broker_id,
+	const std::string& user_id,
+	const std::string& password,
+	const std::vector<std::string>& fronts,
 	const std::string& user_product_info,
 	const std::string& auth_code,
 	const std::string& app_id)
 {
+	CreateThread();
+	qry_manager_ = new CQryManager();
+	qry_manager_->CreateThread();
+
 	CThostBaseWrapper::Initialize(broker_id, user_id, password, fronts);
+
 	user_product_info_ = user_product_info;
 	auth_code_ = auth_code;
 	app_id_ = app_id;
@@ -128,6 +165,28 @@ void CThostTradeApiWrapper::Initialize(const std::string& broker_id,
 			gui_action_->OnLoginProcess(ApiEvent_AuthenticationFailed, "交易终端认证失败");
 		}
 		return;
+	}
+}
+
+void CThostTradeApiWrapper::Deinitialize()
+{
+	if (qry_manager_) {
+		qry_manager_->ExitThread();
+		delete qry_manager_;
+		qry_manager_ = NULL;
+	}
+
+	ExitThread();
+
+	if (trader_api_) {
+		trader_api_->RegisterSpi(NULL);
+		trader_api_->Release();
+		trader_api_ = NULL;
+	}
+
+	if (trader_spi_handler_) {
+		delete trader_spi_handler_;
+		trader_spi_handler_ = NULL;
 	}
 }
 
@@ -151,28 +210,36 @@ void CThostTradeApiWrapper::Logout()
 	force_logout_ = true;
 
 	if (logined_) {
+		::ResetEvent(logout_event_);
 		ReqUserLogout();
+		::WaitForSingleObject(logout_event_, 10000);
 	}
-	else if (connected_) {
-		if (trader_api_) {
-			trader_api_->Release();
-			trader_api_ = NULL;
-		}
-		connected_ = false;
-	}
+// 	else if (connected_) {
+// 		if (trader_api_) {
+// 			trader_api_->Release();
+// 			trader_api_ = NULL;
+// 		}
+// 		connected_ = false;
+// 	}
 }
 
 void CThostTradeApiWrapper::ReqConnect()
 {
 	if (trader_api_) {
+		trader_api_->RegisterSpi(NULL);
 		trader_api_->Release();
 		trader_api_ = NULL;
 	}
 
-	std::string path = GetTempPath(user_id());
+	if (trader_spi_handler_) {
+		delete trader_spi_handler_;
+		trader_spi_handler_ = NULL;
+	}
+
+	std::string path = Utils::GetTempPath(user_id());
 	trader_api_ = CThostFtdcTraderApi::CreateFtdcTraderApi(path.c_str());
-	trader_spi_handler_ = std::shared_ptr<CThostTraderSpiHandler>(new CThostTraderSpiHandler(this));
-	trader_api_->RegisterSpi(trader_spi_handler_.get());
+	trader_spi_handler_ = new CThostTraderSpiHandler(this);
+	trader_api_->RegisterSpi(trader_spi_handler_);
 
 	for (auto it = fronts_.begin(); it != fronts_.end(); it++) {
 		trader_api_->RegisterFront((char *)it->c_str());
@@ -188,11 +255,11 @@ void CThostTradeApiWrapper::ReqConnect()
 void CThostTradeApiWrapper::ReqAuthenticate()
 {
 	CThostFtdcReqAuthenticateField field = { 0 };
-	safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
-	safe_strcpy(field.UserProductInfo, user_product_info_.c_str(), sizeof(TThostFtdcProductInfoType));
-	safe_strcpy(field.AuthCode, auth_code_.c_str(), sizeof(TThostFtdcAuthCodeType));
-	safe_strcpy(field.AppID, app_id_.c_str(), sizeof(TThostFtdcAppIDType));
+	Utils::safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
+	Utils::safe_strcpy(field.UserProductInfo, user_product_info_.c_str(), sizeof(TThostFtdcProductInfoType));
+	Utils::safe_strcpy(field.AuthCode, auth_code_.c_str(), sizeof(TThostFtdcAuthCodeType));
+	Utils::safe_strcpy(field.AppID, app_id_.c_str(), sizeof(TThostFtdcAppIDType));
 
 	int reqid = GetRequestId();
 	trader_api_->ReqAuthenticate(&field, reqid);
@@ -202,11 +269,11 @@ void CThostTradeApiWrapper::ReqUserLogin()
 {
 	CThostFtdcReqUserLoginField login_field;
 	memset(&login_field, 0, sizeof(CThostFtdcReqUserLoginField));
-	safe_strcpy(login_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(login_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
-	safe_strcpy(login_field.Password, password(), sizeof(TThostFtdcPasswordType));
+	Utils::safe_strcpy(login_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(login_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
+	Utils::safe_strcpy(login_field.Password, password(), sizeof(TThostFtdcPasswordType));
 	//version
-	safe_strcpy(login_field.UserProductInfo, "EasyTrader", sizeof(TThostFtdcProductInfoType));
+	Utils::safe_strcpy(login_field.UserProductInfo, "", sizeof(TThostFtdcProductInfoType));
 	int reqid = GetRequestId();
 	trader_api_->ReqUserLogin(&login_field, reqid);
 }
@@ -214,22 +281,46 @@ void CThostTradeApiWrapper::ReqUserLogin()
 void CThostTradeApiWrapper::ReqUserLogout()
 {
 	CThostFtdcUserLogoutField logout_field;
-	memset(&logout_field, 0, sizeof(CThostFtdcReqUserLoginField));
-	safe_strcpy(logout_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(logout_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
+	memset(&logout_field, 0, sizeof(CThostFtdcUserLogoutField));
+	Utils::safe_strcpy(logout_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(logout_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
 	int reqid = GetRequestId();
 	trader_api_->ReqUserLogout(&logout_field, reqid);
+}
+
+int CThostTradeApiWrapper::ReqQrySettlementInfoConfirm()
+{
+	CThostFtdcQrySettlementInfoConfirmField field;
+	memset(&field, 0, sizeof(CThostFtdcQrySettlementInfoConfirmField));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	int reqid = GetRequestId();
+	int ret = trader_api_->ReqQrySettlementInfoConfirm(&field, reqid);
+	return ret < 0 ? ret : reqid;
+}
+
+int CThostTradeApiWrapper::ReqQrySettlementInfo(unsigned int date)
+{
+	CThostFtdcQrySettlementInfoField field;
+	memset(&field, 0, sizeof(CThostFtdcQrySettlementInfoField));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	if (date != 0) {
+		Utils::safe_strcpy(field.TradingDay, CFormatter::GetInstance().Value2String(date).c_str(), sizeof(TThostFtdcDateType));
+	}
+	int reqid = GetRequestId();
+	int ret = trader_api_->ReqQrySettlementInfo(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 int CThostTradeApiWrapper::ReqQryTradingAccount()
 {
 	CThostFtdcQryTradingAccountField field;
-	safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
-	safe_strcpy(field.CurrencyID, "CNY", sizeof(TThostFtdcCurrencyIDType));
+	memset(&field, 0, sizeof(CThostFtdcQryTradingAccountField));
+	Utils::safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	Utils::safe_strcpy(field.CurrencyID, "CNY", sizeof(TThostFtdcCurrencyIDType));
 	int reqid = GetRequestId();
-	trader_api_->ReqQryTradingAccount(&field, reqid);
-	return reqid;
+	int ret = trader_api_->ReqQryTradingAccount(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 int CThostTradeApiWrapper::ReqQryAllInstrument()
@@ -237,52 +328,52 @@ int CThostTradeApiWrapper::ReqQryAllInstrument()
 	CThostFtdcQryInstrumentField field;
 	memset(&field, 0, sizeof(CThostFtdcQryInstrumentField));
 	int reqid = GetRequestId();
-	trader_api_->ReqQryInstrument(&field, reqid);
-	return reqid;
+	int ret = trader_api_->ReqQryInstrument(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 int CThostTradeApiWrapper::ReqQryOrder()
 {
+	orders_cache_.clear();
 	CThostFtdcQryOrderField field;
 	memset(&field, 0, sizeof(CThostFtdcQryOrderField));
-	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
 	int reqid = GetRequestId();
-	trader_api_->ReqQryOrder(&field, reqid);
-	orders_cache_.clear();
-	return reqid;
+	int ret = trader_api_->ReqQryOrder(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 int CThostTradeApiWrapper::ReqQryTrade()
 {
+	trades_cache_.clear();
 	CThostFtdcQryTradeField field;
 	memset(&field, 0, sizeof(CThostFtdcQryTradeField));
-	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
 	int reqid = GetRequestId();
-	trader_api_->ReqQryTrade(&field, reqid);
-	trades_cache_.clear();
-	return reqid;
+	int ret = trader_api_->ReqQryTrade(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 int CThostTradeApiWrapper::ReqQryPosition()
 {
+	positions_cache_.clear();
 	CThostFtdcQryInvestorPositionField field;
 	memset(&field, 0, sizeof(CThostFtdcQryInvestorPositionField));
-	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
 	int reqid = GetRequestId();
-	trader_api_->ReqQryInvestorPosition(&field, reqid);
-	positions_cache_.clear();
-	return reqid;
+	int ret = trader_api_->ReqQryInvestorPosition(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 int CThostTradeApiWrapper::ReqQryPositionDetail()
 {
+	position_details_cache_.clear();
 	CThostFtdcQryInvestorPositionDetailField field;
 	memset(&field, 0, sizeof(CThostFtdcQryInvestorPositionDetailField));
-	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
 	int reqid = GetRequestId();
-	trader_api_->ReqQryInvestorPositionDetail(&field, reqid);
-	position_details_cache_.clear();
-	return reqid;
+	int ret = trader_api_->ReqQryInvestorPositionDetail(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 int CThostTradeApiWrapper::ReqQryDepthMarketData()
@@ -290,17 +381,17 @@ int CThostTradeApiWrapper::ReqQryDepthMarketData()
 	CThostFtdcQryDepthMarketDataField field;
 	memset(&field, 0, sizeof(CThostFtdcQryDepthMarketDataField));
 	int reqid = GetRequestId();
-	trader_api_->ReqQryDepthMarketData(&field, reqid);
-	return reqid;
+	int ret = trader_api_->ReqQryDepthMarketData(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 void CThostTradeApiWrapper::ReqInsertOrder(const OrderInsert& order_insert)
 {
 	CThostFtdcInputOrderField field;
 	memset(&field, 0, sizeof(CThostFtdcInputOrderField));
-	safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
-	safe_strcpy(field.InstrumentID, order_insert.instrument_id.c_str(), sizeof(TThostFtdcInstrumentIDType));
+	Utils::safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	Utils::safe_strcpy(field.InstrumentID, order_insert.instrument_id.c_str(), sizeof(TThostFtdcInstrumentIDType));
 	GetFromTickplusDirection(field.Direction, order_insert.direction);
 	field.TimeCondition = (order_insert.is_market_order ? THOST_FTDC_TC_IOC : THOST_FTDC_TC_GFD);
 	field.OrderPriceType = (order_insert.is_market_order ? THOST_FTDC_OPT_AnyPrice : THOST_FTDC_OPT_LimitPrice);
@@ -313,7 +404,7 @@ void CThostTradeApiWrapper::ReqInsertOrder(const OrderInsert& order_insert)
 	field.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
 	std::stringstream ss;
 	ss << order_insert.order_ref;
-	safe_strcpy(field.OrderRef, ss.str().c_str(), sizeof(TThostFtdcOrderRefType));
+	Utils::safe_strcpy(field.OrderRef, ss.str().c_str(), sizeof(TThostFtdcOrderRefType));
 	field.RequestID = GetRequestId();
 	trader_api_->ReqOrderInsert(&field, field.RequestID);
 }
@@ -330,12 +421,12 @@ void CThostTradeApiWrapper::ReqCancelOrder(const Order& order)
 {
 	CThostFtdcInputOrderActionField	field;
 	memset(&field, 0, sizeof(CThostFtdcInputOrderActionField));
-	safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	Utils::safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
 	field.ActionFlag = THOST_FTDC_AF_Delete;		//ActionFlag;
 	field.FrontID = front_id();
 	field.SessionID = session_id();
-	safe_strcpy(field.OrderSysID, order.order_sys_id.c_str(), sizeof(TThostFtdcOrderSysIDType));
+	Utils::safe_strcpy(field.OrderSysID, order.order_sys_id.c_str(), sizeof(TThostFtdcOrderSysIDType));
 }
 
 int CThostTradeApiWrapper::ReqQryInstrumentMarginRate(const std::string& instrument_id)
@@ -344,14 +435,14 @@ int CThostTradeApiWrapper::ReqQryInstrumentMarginRate(const std::string& instrum
 
 	CThostFtdcQryInstrumentMarginRateField field;
 	memset(&field, 0, sizeof(CThostFtdcQryInstrumentMarginRateField));
-	safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
-	safe_strcpy(field.InstrumentID, instrument_id.c_str(), sizeof(TThostFtdcInstrumentIDType));
+	Utils::safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	Utils::safe_strcpy(field.InstrumentID, instrument_id.c_str(), sizeof(TThostFtdcInstrumentIDType));
 	//speculation
 	field.HedgeFlag = '1';
 	int reqid = GetRequestId();
-	trader_api_->ReqQryInstrumentMarginRate(&field, reqid);
-	return reqid;
+	int ret = trader_api_->ReqQryInstrumentMarginRate(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 void CThostTradeApiWrapper::OnRspConnected(CThostSpiMessage* msg)
@@ -359,7 +450,7 @@ void CThostTradeApiWrapper::OnRspConnected(CThostSpiMessage* msg)
 	ExitTimer(connect_timer_id_);
 	connected_ = true;
 	if (gui_action_) {
-		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_ConnectSuccess, "交易服务器链接成功");
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_TradeConnectSuccess, "交易服务器链接成功");
 	}
 	ReqAuthenticate();
 }
@@ -368,13 +459,16 @@ void CThostTradeApiWrapper::OnRspDisconnected(CThostSpiMessage* msg)
 {
 	connected_ = false;
 	if (gui_action_) {
-		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_Disconnected, "交易服务器断链");
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_TradeDisconnected, "交易服务器断链");
 	}
 
-// 	if (trader_api_) {
-// 		trader_api_->Release();
-// 		trader_api_ = NULL;
-// 	}
+	if (force_logout_) {
+// 		if (trader_api_) {
+// 			trader_api_->Release();
+// 			trader_api_ = NULL;
+//		}
+		::SetEvent(logout_event_);
+	}
 }
 
 void CThostTradeApiWrapper::OnRspAuthenticate(CThostSpiMessage* msg)
@@ -401,7 +495,7 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 {
 	if (msg->rsp_field()->ErrorID) {
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginFailed,
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_TradeLoginFailed,
 				"交易服务器登录失败",
 				msg->rsp_field()->ErrorID,
 				msg->rsp_field()->ErrorMsg);
@@ -420,11 +514,15 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 		logined_ = true;
 
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginSuccess, "交易服务器登录成功");
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_TradeLoginSuccess, "交易服务器登录成功");
 		}
 
 		if (!login_times_) { // 第一次登录
+			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQrySettlementInfoConfirm, this), "查询结算信息");
 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryAllInstrument, this), "查询合约");
+// 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryOrder, this), "查询委托");
+// 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryTrade, this), "查询成交");
+			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPositionDetail, this), "查询持仓");
 		}
 
 		login_times_++;
@@ -435,7 +533,15 @@ void CThostTradeApiWrapper::OnRspUserLogout(CThostSpiMessage* msg)
 {
 	logined_ = false;
 	if (gui_action_) {
-		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LogoutSuccess, "交易服务器登录失败");
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_TradeLogoutSuccess, "交易服务器注销");
+	}
+
+	if (force_logout_) {
+// 		if (trader_api_) {
+// 			trader_api_->Release();
+// 			trader_api_ = NULL;
+// 		}
+		::SetEvent(logout_event_);
 	}
 }
 
@@ -473,14 +579,14 @@ void CThostTradeApiWrapper::OnRtnOrder(CThostSpiMessage* msg)
 				if (data_center_/* && current_session*/) {
 					data_center_->OnRtnTrade(trade);
 
-					std::set<Position> positions = data_center_->positions();
 					if (gui_action_) {
-						gui_action_->RefreshPositions(positions);
+						gui_action_->RefreshTrade(trade);
 					}
-				}
 
-				if (gui_action_) {
-					gui_action_->RefreshTrade(trade);
+// 					std::set<Position> positions = data_center_->positions();
+// 					if (gui_action_) {
+// 						gui_action_->RefreshPositions(positions);
+// 					}
 				}
 			}
 		}
@@ -497,10 +603,6 @@ void CThostTradeApiWrapper::OnRtnTrade(CThostSpiMessage* msg)
 	if (f) {
 		Trade trade(*f);
 
-		if (gui_action_) {
-			gui_action_->RefreshTrade(trade);
-		}
-
 		bool current_session = true;
 		auto it_order = sysid2orderkey_.find(trade.order_sys_id);
 		if (it_order != sysid2orderkey_.end()) {
@@ -512,14 +614,64 @@ void CThostTradeApiWrapper::OnRtnTrade(CThostSpiMessage* msg)
 			if (data_center_) {
 				data_center_->OnRtnTrade(trade);
 
-				std::set<Position> positions = data_center_->positions();
 				if (gui_action_) {
-					gui_action_->RefreshPositions(positions);
+					gui_action_->RefreshTrade(trade);
 				}
+
+// 				std::set<Position> positions = data_center_->positions();
+// 				if (gui_action_) {
+// 					gui_action_->RefreshPositions(positions);
+// 				}
 			}
 		}
 		else {
 			rtn_trade_cache_.insert(trade);
+		}
+	}
+}
+
+void CThostTradeApiWrapper::OnErrRtnOrderInsert(CThostSpiMessage* msg)
+{
+	CThostFtdcInputOrderField* f = msg->GetFieldPtr<CThostFtdcInputOrderField>();
+	if (f) {
+		OrderKey key(front_id(), session_id(), atoi(f->OrderRef));
+		Order order(*f, key, msg->rsp_field()->ErrorID, msg->rsp_field()->ErrorMsg);
+		order.request_id = f->RequestID;
+
+		if (order.status == Status_Error) {
+			bool current_session = true;
+
+			if (data_center_/* && current_session*/)
+			{
+				data_center_->OnRtnOrder(order);
+			}
+		}
+
+		if (gui_action_) {
+			gui_action_->RefreshOrder(order);
+		}
+	}
+}
+
+void CThostTradeApiWrapper::OnRspOrderInsert(CThostSpiMessage* msg)
+{
+	CThostFtdcInputOrderField* f = msg->GetFieldPtr<CThostFtdcInputOrderField>();
+	if (f) {
+		OrderKey key(front_id(), session_id(), atoi(f->OrderRef));
+		Order order(*f, key, msg->rsp_field()->ErrorID, msg->rsp_field()->ErrorMsg);
+		order.request_id = f->RequestID;
+
+		if (order.status == Status_Error) {
+			bool current_session = true;
+
+			if (data_center_/* && current_session*/)
+			{
+				data_center_->OnRtnOrder(order);
+			}
+		}
+
+		if (gui_action_) {
+			gui_action_->RefreshOrder(order);
 		}
 	}
 }
@@ -657,6 +809,10 @@ void CThostTradeApiWrapper::OnRspQryTradingAccount(CThostSpiMessage* msg)
 	else {
 		TradingAccount account(*f);
 
+		if (data_center_) {
+			data_center_->OnRspTradeAccount(account);
+		}
+
 		if (gui_action_) {
 			gui_action_->RefreshAccount(account);
 			gui_action_->OnLoginProcess(ApiEvent_QryTradingAccountSuccess,
@@ -720,10 +876,6 @@ void CThostTradeApiWrapper::OnRspQryInstrument(CThostSpiMessage* msg)
 	if (f) {
 		Instrument inst(*f);
 		instruments_cache_.insert(inst);
-
-		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_QryInstrumentSuccess, ("查询合约成功, " + inst.instrument_id).c_str());
-		}
 	}
 
 	if (msg->is_last()) {
@@ -734,6 +886,11 @@ void CThostTradeApiWrapper::OnRspQryInstrument(CThostSpiMessage* msg)
 		if (gui_action_) {
 			gui_action_->RefreshInstruments(instruments_cache_);
 		}
+
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryInstrumentSuccess, "查询合约成功");
+		}
+
 		instruments_cache_.clear();
 	}
 }
@@ -757,22 +914,45 @@ void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg
 	}
 	if (f) {
 		PositionDetail position(*f);
-		position_details_cache_.insert(position);
-
-		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_QryPositionDetailSuccess,
-				("查询持仓成功, " + position.instrument_id).c_str());
-		}
+		if (position.volume > 0)
+			position_details_cache_.insert(position);
 	}
 
 	if (msg->is_last()) {
 		if (data_center_) {
-			data_center_->OnRtnPositionDetails(position_details_cache_);
+			position_details_cache_ = data_center_->OnRtnPositionDetails(position_details_cache_);
 		}
 
 		if (gui_action_) {
 			gui_action_->RefreshPositionDetails(position_details_cache_);
 		}
+
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryPositionDetailSuccess, "查询持仓明细成功");
+		}
 		position_details_cache_.clear();
+	}
+}
+
+void CThostTradeApiWrapper::OnRspQrySettlementInfoConfirm(CThostSpiMessage* msg)
+{
+	CThostFtdcSettlementInfoConfirmField* f = msg->GetFieldPtr<CThostFtdcSettlementInfoConfirmField>();
+	if (msg->rsp_field()->ErrorID) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QrySettlementInfoConfirmFailed, 
+				"查询结算信息确认结果失败", 
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
+		return;
+	}
+	if (f) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QrySettlementInfoConfirmSuccess, "结算单已确认");
+		}
+	}
+	else {
+		//查询结算信息
+		qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQrySettlementInfo, this, 0), "查询结算信息");
 	}
 }

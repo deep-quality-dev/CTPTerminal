@@ -1,7 +1,7 @@
 ﻿#include "Utils.h"
 #include <fstream>
 
-std::string GetCurrentDate()
+std::string Utils::GetCurrentDate()
 {
 	char buf[256];
 	SYSTEMTIME sysTime;
@@ -11,7 +11,7 @@ std::string GetCurrentDate()
 	return buf;
 }
 
-std::string GetCurrentDateTime()
+std::string Utils::GetCurrentDateTime()
 {
 	char buf[256];
 	SYSTEMTIME sysTime;
@@ -21,7 +21,7 @@ std::string GetCurrentDateTime()
 	return buf;
 }
 
-__time64_t CalcTimestamp(const std::string& timestr)
+__time64_t Utils::CalcTimestamp(const std::string& timestr)
 {
 	int year = 0, month = 0, day = 0;
 	int hour = 0, minute = 0, second = 0, milli = 0;
@@ -51,7 +51,7 @@ __time64_t CalcTimestamp(const std::string& timestr)
 	return time_stamp * 1000;
 }
 
-SYSTEMTIME GetSystemTime(__time64_t timestamp)
+SYSTEMTIME Utils::GetSystemTime(__time64_t timestamp)
 {
 	__time64_t local = timestamp / 1000;
 	struct tm tm = { 0 };
@@ -69,7 +69,7 @@ SYSTEMTIME GetSystemTime(__time64_t timestamp)
 	return systime;
 }
 
-__time64_t CalcTimestampMilli(const SYSTEMTIME& systime)
+__time64_t Utils::CalcTimestampMilli(const SYSTEMTIME& systime)
 {
 	struct tm tm;
 	__time64_t time_stamp;
@@ -88,13 +88,13 @@ __time64_t CalcTimestampMilli(const SYSTEMTIME& systime)
 	return time_stamp;
 }
 
-std::string GetTimeString(__time64_t timestamp, int format /*= 1*/)
+std::string Utils::GetTimeString(__time64_t timestamp, int format /*= 1*/)
 {
 	SYSTEMTIME systime = GetSystemTime(timestamp);
 	return GetTimeString(systime, format);
 }
 
-std::string GetTimeString(SYSTEMTIME systime, int format /*= 1*/)
+std::string Utils::GetTimeString(SYSTEMTIME systime, int format /*= 1*/)
 {
 	char buf[256];
 	switch (format) {
@@ -110,7 +110,7 @@ std::string GetTimeString(SYSTEMTIME systime, int format /*= 1*/)
 	return buf;
 }
 
-SYSTEMTIME AddTime(const SYSTEMTIME& systime, int field, int num)
+SYSTEMTIME Utils::AddTime(const SYSTEMTIME& systime, int field, int num)
 {
 	__time64_t timestamp = CalcTimestampMilli(systime);
 	switch (field)
@@ -137,7 +137,7 @@ SYSTEMTIME AddTime(const SYSTEMTIME& systime, int field, int num)
 	return GetSystemTime(timestamp);
 }
 
-std::string GetTempPath(const std::string &filepath)
+std::string Utils::GetTempPath(const std::string &filepath)
 {
 	char buffer[MAX_PATH + 1];
 	::GetTempPathA(MAX_PATH, buffer);
@@ -145,7 +145,7 @@ std::string GetTempPath(const std::string &filepath)
 	return str.substr(0, str.find_last_of('\\') + 1) + filepath;
 }
 
-std::string GetRelativePath(const char* path)
+std::string Utils::GetRelativePath(const char* path)
 {
 	char szFull[MAX_PATH], szDrv[_MAX_DRIVE], szPath[MAX_PATH];
 	GetModuleFileNameA(NULL, szFull, MAX_PATH);
@@ -155,7 +155,7 @@ std::string GetRelativePath(const char* path)
 	return std::string(szFull) + path;
 }
 
-int CompareDouble(double val1, double val2, int precision /*= 6*/)
+int Utils::CompareDouble(double val1, double val2, int precision /*= 6*/)
 {
 	double dPrecision = (double)1 / (double)pow(10.0, precision);
 
@@ -171,7 +171,7 @@ int CompareDouble(double val1, double val2, int precision /*= 6*/)
 	return -1;
 }
 
-char* safe_strcpy(char* dst, const char* src, unsigned int max_length)
+char* Utils::safe_strcpy(char* dst, const char* src, unsigned int max_length)
 {
 	size_t len = strlen(src);
 	strncpy_s(dst, max_length, src, len > max_length ? max_length : len);
@@ -179,7 +179,15 @@ char* safe_strcpy(char* dst, const char* src, unsigned int max_length)
 	return dst;
 }
 
-std::string replace(std::string& str, const std::string& from, const std::string& to)
+wchar_t* Utils::safe_wstrcpy(wchar_t* dst, const wchar_t* src, unsigned int max_length)
+{
+	size_t len = wcslen(src);
+	wcsncpy_s(dst, max_length, src, len > max_length ? max_length : len);
+	dst[max_length - 1] = 0;
+	return dst;
+}
+
+std::string Utils::replace(std::string& str, const std::string& from, const std::string& to)
 {
 	size_t start_pos = str.find(from);
 	if (start_pos == std::string::npos)
@@ -188,7 +196,7 @@ std::string replace(std::string& str, const std::string& from, const std::string
 	return str;
 }
 
-std::string replace_all(std::string& str, const std::string& from, const std::string& to)
+std::string Utils::replace_all(std::string& str, const std::string& from, const std::string& to)
 {
 	if (from.empty())
 		return false;
@@ -200,7 +208,7 @@ std::string replace_all(std::string& str, const std::string& from, const std::st
 	return str;
 }
 
-std::string ConvertUnicode2Multibyte(const wchar_t* str)
+std::string Utils::ConvertUnicode2Multibyte(const wchar_t* str)
 {
 	if (!str) {
 		return "";
@@ -219,7 +227,7 @@ std::string ConvertUnicode2Multibyte(const wchar_t* str)
 	return result;
 }
 
-std::wstring ConvertMultibyte2Unicode(const char* str)
+std::wstring Utils::ConvertMultibyte2Unicode(const char* str)
 {
 	if (!str) {
 		return L"";
@@ -237,7 +245,7 @@ std::wstring ConvertMultibyte2Unicode(const char* str)
 	return wstr;
 }
 
-bool ExistFile(const std::string& path)
+bool Utils::ExistFile(const std::string& path)
 {
 	std::ifstream f(path.c_str());
 	bool exist = f.good();
@@ -245,7 +253,7 @@ bool ExistFile(const std::string& path)
 	return exist;
 }
 
-bool SaveFile(const std::string& path, const char* data, bool append /*= true*/)
+bool Utils::SaveFile(const std::string& path, const char* data, bool append /*= true*/)
 {
 	std::ofstream fout;
 
@@ -268,5 +276,13 @@ bool SaveFile(const std::string& path, const char* data, bool append /*= true*/)
 		return true;
 	}
 	return false;
+}
+
+void Utils::CloseHandleSafely(HANDLE& event_handle)
+{
+	if (event_handle) {
+		::CloseHandle(event_handle);
+		event_handle = NULL;
+	}
 }
 

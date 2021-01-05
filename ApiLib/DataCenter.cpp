@@ -22,13 +22,13 @@ void CDataCenter::OnRtnInstruments(const std::set<Instrument>& instruments)
 	instruments_ = instruments;
 }
 
-void CDataCenter::OnRtnQuote(const Quote& squote)
+Quote CDataCenter::OnRtnQuote(const Quote& squote)
 {
 	Quote quote = squote;
 
 	auto it_instrument = instruments_.find(quote.instrument_id);
 	if (it_instrument == instruments_.end()) {
-		return;
+		return Quote("");
 	}
 
 	if (it_instrument->exchange_id == SHFE ||	// 上期所
@@ -38,16 +38,16 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 		quote.average_price = it_instrument->volume_multiple == 0 ? 0 : quote.average_price / it_instrument->volume_multiple;
 		// 郑商所的夜盘日期是当天。
 		// 其他交易所的夜盘日期是下一个交易日。
-		SYSTEMTIME systime = GetSystemTime(quote.last_time);
+		SYSTEMTIME systime = Utils::GetSystemTime(quote.last_time);
 		if (systime.wHour >= 21) {
 			if (systime.wDayOfWeek == 1) { // monday
-				systime = AddTime(systime, 0, -3);
+				systime = Utils::AddTime(systime, 0, -3);
 			}
 			else {
-				systime = AddTime(systime, 0, -1);
+				systime = Utils::AddTime(systime, 0, -1);
 			}
 		}
-		quote.last_time = CalcTimestampMilli(systime);
+		quote.last_time = Utils::CalcTimestampMilli(systime);
 
 		if (quote.average_price <= 1e-4) {
 			quote.average_price = quote.last_price;
@@ -72,8 +72,16 @@ void CDataCenter::OnRtnQuote(const Quote& squote)
 
 	server_time_ = quote.last_time;
 
-	// Write Quote
-	SaveQuote(quote);
+	CalcPositionProfit();
+
+	if (quote_callback_) {
+		quote_callback_(quote);
+	}
+
+// 	// Write Quote
+// 	SaveQuote(quote);
+
+	return quote;
 }
 
 void CDataCenter::OnRspInstrumentMarginRate(const InstrumentMarginRate& margin_rate)
@@ -84,6 +92,9 @@ void CDataCenter::OnRspInstrumentMarginRate(const InstrumentMarginRate& margin_r
 void CDataCenter::OnRspTradeAccount(const TradingAccount& account)
 {
 	trading_account_ = account;
+	if (onaccount_callback_) {
+		onaccount_callback_(trading_account_);
+	}
 }
 
 void CDataCenter::OnRtnPositions(const std::set<Position>& positions)
@@ -91,9 +102,17 @@ void CDataCenter::OnRtnPositions(const std::set<Position>& positions)
 	positions_ = positions;
 }
 
-void CDataCenter::OnRtnPositionDetails(const std::set<PositionDetail>& positions)
+std::set<PositionDetail> CDataCenter::OnRtnPositionDetails(const std::set<PositionDetail>& positions)
 {
-	position_details_ = positions;
+	{
+		std::unique_lock<std::mutex> lk(mutex_positions_);
+		position_details_ = positions;
+	}
+	// TODO, 从持仓明细合计持仓
+
+	CalcPositionProfit();
+
+	return position_details_;
 }
 
 void CDataCenter::OnRspQryOrders(const std::set<Order>& orders)
@@ -112,26 +131,27 @@ void CDataCenter::OnRtnOrder(const Order& order)
 	order_sysid2ref_[order.order_sys_id] = order.GetKey().order_ref;
 	if (order.status == Status_Error || order.status == Status_Canceled) {
 		if (order.offset_flag != Open) {
-			// 如果正在等待报单回报，TODO
-
-			// 如果没有报单，在持仓列表里面删除
-			for (auto it_position = positions_.begin(); it_position != positions_.end(); it_position++) {
-				if (it_position->instrument_id == order.instrument_id &&
-					it_position->direction == order.direction) {
-					Position position = *it_position;
-					int v = min(order.volume_remained, position.yesterday_volume);
-					position.yesterday_volume -= v;
-					position.today_volume += v;
-					positions_.insert(position);
-					break;
-				}
-			}
+// 			// 如果正在等待报单回报，TODO
+// 
+// 			// 如果没有报单，在持仓列表里面删除
+// 			for (auto it_position = positions_.begin(); it_position != positions_.end(); it_position++) {
+// 				if (it_position->instrument_id == order.instrument_id &&
+// 					it_position->direction == order.direction) {
+// 					Position position = *it_position;
+// 					int v = min(order.volume_remained, position.yesterday_volume);
+// 					position.yesterday_volume -= v;
+// 					position.today_volume += v;
+// 					positions_.insert(position);
+// 					break;
+// 				}
+// 			}
 		}
 
-		if (order.request_id > 0 && order.volume_remained > 0) {
-			double price = GetMarketPrice(order.instrument_id, order.direction);
-			InsertOrder(order.instrument_id, order.offset_flag, order.direction, price, order.volume_remained);
-		}
+// 		if (order.request_id > 0 && order.volume_remained > 0) {
+// 			// 反复重行报单，最多9次
+// 			double price = GetMarketPrice(order.instrument_id, order.direction);
+// 			InsertOrder(order.instrument_id, order.offset_flag, order.direction, price, order.volume_remained);
+// 		}
 	}
 }
 
@@ -143,78 +163,62 @@ void CDataCenter::OnRtnTrade(const Trade& trade)
 		auto it_order = order_ref2order_.find(order_ref);
 		if (it_order != order_ref2order_.end()) {
 			if (trade.offset_flag == Open) {
-				bool found = false;
-				for (auto it_position = positions_.begin();
-					it_position != positions_.end(); it_position++) {
-					if (it_position->instrument_id == trade.instrument_id && it_position->direction == trade.direction) {
-						Position position = *it_position;
-						position.position_cost = (position.position_cost * position.volume() + trade.volume * trade.price) / (position.volume() + trade.volume);
-						position.today_volume += trade.volume;
-						positions_.insert(position);
-						found = true;
-						break;
-					}
-				}
-
-				if (found) {
-					Position position(trade.instrument_id, trade.direction);
-					position.exchange_id = trade.exchange_id;
-					position.today_volume = trade.volume;
-					position.position_cost = trade.price;
-					positions_.insert(position);
-				}
-
-				PositionDetail position_detail(trade.trade_id);
-				position_detail.exchange_id = trade.exchange_id;
-				position_detail.instrument_id = trade.instrument_id;
-				position_detail.direction = trade.direction;
-				position_detail.volume = trade.volume;
-				position_detail.open_price = trade.price;
-				position_detail.margin = 0;
-				position_detail.profit = 0;
-				position_details_.insert(position_detail);
+// 				bool found = false;
+// 				for (auto it_position = positions_.begin();
+// 					it_position != positions_.end(); it_position++) {
+// 					if (it_position->instrument_id == trade.instrument_id && it_position->direction == trade.direction) {
+// 						Position position = *it_position;
+// 						position.position_cost = (position.position_cost * position.volume() + trade.volume * trade.price) / (position.volume() + trade.volume);
+// 						position.today_volume += trade.volume;
+// 						positions_.erase(it_position);
+// 						positions_.insert(position);
+// 						found = true;
+// 						break;
+// 					}
+// 				}
+// 
+// 				if (!found) {
+// 					Position position(trade.instrument_id, trade.direction);
+// 					position.exchange_id = trade.exchange_id;
+// 					position.today_volume = trade.volume;
+// 					position.position_cost = trade.price;
+// 					positions_.insert(position);
+// 				}
 			}
 			else {
-				int volume_traded = trade.volume;
-				while (volume_traded > 0) {
-					for (auto it_position = positions_.begin();
-						it_position != positions_.end(); it_position++) {
-						if (it_position->instrument_id == trade.instrument_id &&
-							it_position->direction == trade.direction) {
-							Position pos = *it_position;
+// 				int volume_traded = trade.volume;
+// 				while (volume_traded > 0) {
+// 					for (auto it_position = positions_.begin();
+// 						it_position != positions_.end(); it_position++) {
+// 						if (it_position->instrument_id == trade.instrument_id &&
+// 							it_position->direction == trade.direction) {
+// 							Position pos = *it_position;
+// 
+// 							int v = min(volume_traded, pos.yesterday_volume);
+// 							volume_traded -= v;
+// 							pos.yesterday_volume -= v;
+// 
+// 							v = min(volume_traded, pos.today_volume);
+// 							volume_traded -= v;
+// 							pos.today_volume -= v;
+// 
+// 							if (pos.today_volume + pos.yesterday_volume == 0) {
+// 								positions_.erase(pos);
+// 								break;
+// 							}
+// 							else {
+// 								positions_.erase(it_position);
+// 								positions_.insert(pos);
+// 							}
+// 						}
+// 					}
+// 				}
+			}
 
-							int v = min(volume_traded, pos.yesterday_volume);
-							volume_traded -= v;
-							pos.yesterday_volume -= v;
+			CalcPositionProfit();
 
-							v = min(volume_traded, pos.today_volume);
-							volume_traded -= v;
-							pos.today_volume -= v;
-
-							if (pos.today_volume + pos.yesterday_volume == 0) {
-								positions_.erase(pos);
-								break;
-							}
-							else {
-								positions_.insert(pos);
-							}
-						}
-					}
-				}
-
-				for (auto it_position_detail = position_details_.begin();
-					it_position_detail != position_details_.end(); it_position_detail++) {
-					if (it_position_detail->trade_id == trade.trade_id) {
-						position_details_.erase(*it_position_detail);
-
-						PositionDetail position_detail = *it_position_detail;
-						position_detail.volume -= trade.volume;
-						if (position_detail.volume > 0) {
-							position_details_.insert(position_detail);
-						}
-						break;
-					}
-				}
+			if (ontrade_callback_) {
+				ontrade_callback_(trade);
 			}
 		}
 	}
@@ -235,6 +239,24 @@ void CDataCenter::InsertOrder(const std::string& instrument_id, OffsetFlag offse
 	}
 }
 
+void CDataCenter::InsertMarketOrder(const std::string& instrument_id, OffsetFlag offset_flag, Direction direction, int volume)
+{
+	// NOTE: 上期所不支持市价报单
+
+	OrderInsert order_insert;
+	order_insert.instrument_id = instrument_id;
+	order_insert.offset_flag = offset_flag;
+	order_insert.direction = direction;
+	order_insert.is_market_order = false;
+	order_insert.limit_price = GetMarketPrice(instrument_id, direction);
+	order_insert.volume = volume;
+	order_insert.order_ref = ++order_ref_;
+
+	if (trade_api_) {
+		trade_api_->ReqInsertOrder(order_insert);
+	}
+}
+
 void CDataCenter::SaveQuote(const Quote& quote)
 {
 	// 如果在交易时间内，保存行情
@@ -247,17 +269,17 @@ void CDataCenter::SaveQuote(const Quote& quote)
 
 	// 4点之前的行情都放在一起
 	__time64_t time = quote.last_time;
-	SYSTEMTIME systime = GetSystemTime(time);
+	SYSTEMTIME systime = Utils::GetSystemTime(time);
 	if (systime.wHour < 4) {
-		systime = AddTime(systime, 0, -1);
+		systime = Utils::AddTime(systime, 0, -1);
 	}
-	std::string date = GetTimeString(systime, 0);
+	std::string date = Utils::GetTimeString(systime, 0);
 
 	std::stringstream ss;
-	ss << "quote//" << quote.instrument_id << "_" << replace_all(date, "-", "") << ".csv";
+	ss << "quote//" << quote.instrument_id << "_" << Utils::replace_all(date, "-", "") << ".csv";
 
 	std::stringstream line;
-	line << GetTimeString(quote.last_time) << ","
+	line << Utils::GetTimeString(quote.last_time) << ","
 		<< quote.instrument_id << ","
 		<< quote.last_price << ","
 		<< quote.ask_price1 << ","
@@ -274,7 +296,7 @@ void CDataCenter::SaveQuote(const Quote& quote)
 		<< quote.trade_volume << ","
 		<< quote.position_volume << std::endl;
 
-	SaveFile(GetRelativePath(ss.str().c_str()), line.str().c_str());
+	Utils::SaveFile(Utils::GetRelativePath(ss.str().c_str()), line.str().c_str());
 }
 
 double CDataCenter::GetMarketPrice(const std::string& instrument_id, Direction direction)
@@ -287,4 +309,36 @@ double CDataCenter::GetMarketPrice(const std::string& instrument_id, Direction d
 		return direction == Sell ? quote->lower_limit_price : quote->upper_limit_price;
 	}
 	return 0;
+}
+
+void CDataCenter::CalcPositionProfit()
+{
+	std::unique_lock<std::mutex> lk(mutex_positions_);
+
+	std::set<PositionDetail> position_details_bk;
+	for (auto it_position = position_details_.begin();
+		it_position != position_details_.end(); it_position++) {
+
+		auto it_quote = quotes_.find(it_position->instrument_id);
+		if (it_quote == quotes_.end()) {
+			continue;
+		}
+
+		Quote* quote = it_quote->second[1];
+		if (quote == NULL) {
+			continue;
+		}
+
+		auto it_instrument = instruments_.find(quote->instrument_id);
+		if (it_position->instrument_id == quote->instrument_id && it_instrument != instruments_.end()) {
+			PositionDetail position_detail = *it_position;
+			int signal = it_position->direction == Buy ? 1 : -1;
+			position_detail.profit = signal * (quote->last_price - it_position->open_price) * it_position->volume * it_instrument->volume_multiple;
+			position_details_bk.insert(position_detail);
+		}
+		else {
+			position_details_bk.insert(*it_position); // ERROR
+		}
+	}
+	position_details_ = position_details_bk;
 }

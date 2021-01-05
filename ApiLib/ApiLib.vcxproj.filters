@@ -54,9 +54,6 @@
     <ClInclude Include="DataTypes\FtdcTranslator.h">
       <Filter>DataTypes</Filter>
     </ClInclude>
-    <ClInclude Include="DataTypes\GuiDataAction.h">
-      <Filter>DataTypes</Filter>
-    </ClInclude>
     <ClInclude Include="Utils\Utils.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -94,6 +91,12 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="TimeRegular.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfigParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GuiDataAction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -144,6 +147,9 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="TimeRegular.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

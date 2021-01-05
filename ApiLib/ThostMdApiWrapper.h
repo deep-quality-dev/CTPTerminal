@@ -23,6 +23,7 @@ public:
 		const std::string& user_id,
 		const std::string& password,
 		const std::vector<std::string>& fronts);
+	virtual void Deinitialize();
 
 	virtual void Login();
 	virtual void Logout();
@@ -47,11 +48,13 @@ protected:
 
 private:
 	CThostFtdcMdApi* md_api_;
-	std::shared_ptr<CThostMdSpiHandler> md_spi_handler_;
+	CThostMdSpiHandler* md_spi_handler_;
 
 	bool connected_, logined_;
 	int login_times_;
 	bool force_logout_;
+
+	HANDLE logout_event_;
 
 	int connect_timer_id_; // 检查连接的定时ID
 

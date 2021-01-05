@@ -145,7 +145,9 @@ public:
 	virtual void OnRspGenUserText(CThostFtdcRspGenUserTextField *pRspGenUserText, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
 
 	///报单录入请求响应
-	virtual void OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+	virtual void OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+		AddMsg(new CThostSpiMessage(SPI::OnRspOrderInsert, pInputOrder, pRspInfo, nRequestID, bIsLast));
+	}
 
 	///预埋单录入请求响应
 	virtual void OnRspParkedOrderInsert(CThostFtdcParkedOrderField *pParkedOrder, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
@@ -260,7 +262,9 @@ public:
 	virtual void OnRspQryNotice(CThostFtdcNoticeField *pNotice, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
 
 	///请求查询结算信息确认响应
-	virtual void OnRspQrySettlementInfoConfirm(CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
+	virtual void OnRspQrySettlementInfoConfirm(CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+		AddMsg(new CThostSpiMessage(SPI::OnRspQrySettlementInfoConfirm, pSettlementInfoConfirm, pRspInfo, nRequestID, bIsLast));
+	}
 
 	///请求查询投资者持仓明细响应
 	virtual void OnRspQryInvestorPositionCombineDetail(CThostFtdcInvestorPositionCombineDetailField *pInvestorPositionCombineDetail, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
@@ -347,13 +351,19 @@ public:
 	virtual void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};
 
 	///报单通知
-	virtual void OnRtnOrder(CThostFtdcOrderField *pOrder) {};
+	virtual void OnRtnOrder(CThostFtdcOrderField *pOrder) {
+		AddMsg(new CThostSpiMessage(SPI::OnRtnOrder, pOrder));
+	}
 
 	///成交通知
-	virtual void OnRtnTrade(CThostFtdcTradeField *pTrade) {};
+	virtual void OnRtnTrade(CThostFtdcTradeField *pTrade) {
+		AddMsg(new CThostSpiMessage(SPI::OnRtnTrade, pTrade));
+	}
 
 	///报单录入错误回报
-	virtual void OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo) {};
+	virtual void OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo) {
+		AddMsg(new CThostSpiMessage(SPI::OnErrRtnOrderInsert, pInputOrder, pRspInfo));
+	}
 
 	///报单操作错误回报
 	virtual void OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderAction, CThostFtdcRspInfoField *pRspInfo) {};

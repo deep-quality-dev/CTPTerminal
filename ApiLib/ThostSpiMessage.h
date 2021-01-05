@@ -23,7 +23,12 @@ public:
 		OnRspQryInstrumentMarginRate,
 		OnRspQryInstrument,
 		OnRspQryDepthMarketData,
-		OnRspQryInvestorPositionDetail
+		OnRspQryInvestorPositionDetail,
+		OnRspQrySettlementInfoConfirm,
+		OnRtnOrder,
+		OnRtnTrade,
+		OnErrRtnOrderInsert,
+		OnRspOrderInsert
 	};
 
 	template <class T>

@@ -2,22 +2,26 @@
 #include "ThostMdApiWrapper.h"
 #include "ThostSpiHandler.h"
 #include "DataCenter.h"
-#include "DataTypes/GuiDataAction.h"
+#include "GuiDataAction.h"
 #include "Utils/Utils.h"
 #include "Utils/Logger.h"
 #include <sstream>
 
+#pragma comment(lib, "ThostApi/thostmduserapi_se.lib")
+// #pragma comment(lib, "Site/CPP/ChnFutureSite/ThostApi/thostmduserapi_se.lib")
 
 CThostMdApiWrapper::CThostMdApiWrapper(CDataCenter* data_center, IGuiDataAction* gui_action) : 
 	CThostBaseWrapper(data_center, gui_action),
-	md_api_(NULL), connected_(false), logined_(false), login_times_(0), force_logout_(false),
+	md_api_(NULL), md_spi_handler_(NULL), connected_(false), logined_(false), login_times_(0), force_logout_(false),
 	connect_timer_id_(100)
 {
+	logout_event_ = ::CreateEventW(NULL, FALSE, FALSE, L"MD_LOGOUT_EVENT");
 }
 
 
 CThostMdApiWrapper::~CThostMdApiWrapper()
 {
+	::CloseHandle(logout_event_);
 }
 
 void CThostMdApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
@@ -70,7 +74,7 @@ void CThostMdApiWrapper::OnTimer(int timer_id)
 	if (timer_id == connect_timer_id_) {
 		ExitTimer(timer_id);
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_ConnectTimeout);
+			gui_action_->OnLoginProcess(ApiEvent_MdConnectTimeout, "行情服务器链接超时");
 		}
 		return;
 	}
@@ -97,9 +101,30 @@ void CThostMdApiWrapper::OnTimer(int timer_id)
 	}
 }
 
-void CThostMdApiWrapper::Initialize(const std::string& broker_id, const std::string& user_id, const std::string& password, const std::vector<std::string>& fronts)
+void CThostMdApiWrapper::Initialize(const std::string& broker_id,
+	const std::string& user_id,
+	const std::string& password, 
+	const std::vector<std::string>& fronts)
 {
+	CreateThread();
+
 	CThostBaseWrapper::Initialize(broker_id, user_id, password, fronts);
+}
+
+void CThostMdApiWrapper::Deinitialize()
+{
+	ExitThread();
+
+	if (md_api_) {
+		md_api_->RegisterSpi(NULL);
+		md_api_->Release();
+		md_api_ = NULL;
+	}
+
+	if (md_spi_handler_) {
+		delete md_spi_handler_;
+		md_spi_handler_ = NULL;
+	}
 }
 
 void CThostMdApiWrapper::Login()
@@ -119,28 +144,36 @@ void CThostMdApiWrapper::Logout()
 	force_logout_ = true;
 
 	if (logined_) {
+		::ResetEvent(logout_event_);
 		ReqUserLogout();
+		::WaitForSingleObject(logout_event_, 10000);
 	}
-	else if (connected_) {
-		if (md_api_) {
-			md_api_->Release();
-			md_api_ = NULL;
-		}
-		connected_ = false;
-	}
+// 	else if (connected_) {
+// 		if (md_api_) {
+// 			md_api_->Release();
+// 			md_api_ = NULL;
+// 		}
+// 		connected_ = false;
+// 	}
 }
 
 void CThostMdApiWrapper::ReqConnect()
 {
 	if (md_api_) {
+		md_api_->RegisterSpi(NULL);
 		md_api_->Release();
 		md_api_ = NULL;
 	}
 
-	std::string path = GetTempPath(user_id());
+	if (md_spi_handler_) {
+		delete md_spi_handler_;
+		md_spi_handler_ = NULL;
+	}
+
+	std::string path = Utils::GetTempPath(user_id());
 	md_api_ = CThostFtdcMdApi::CreateFtdcMdApi(path.c_str());
-	md_spi_handler_ = std::shared_ptr<CThostMdSpiHandler>(new CThostMdSpiHandler(this));
-	md_api_->RegisterSpi(md_spi_handler_.get());
+	md_spi_handler_ = new CThostMdSpiHandler(this);
+	md_api_->RegisterSpi(md_spi_handler_);
 
 	for (auto it = fronts_.begin(); it != fronts_.end(); it++) {
 		md_api_->RegisterFront((char *)it->c_str());
@@ -154,11 +187,11 @@ void CThostMdApiWrapper::ReqUserLogin()
 {
 	CThostFtdcReqUserLoginField login_field;
 	memset(&login_field, 0, sizeof(CThostFtdcReqUserLoginField));
-	safe_strcpy(login_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(login_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
-	safe_strcpy(login_field.Password, password(), sizeof(TThostFtdcPasswordType));
+	Utils::safe_strcpy(login_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(login_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
+	Utils::safe_strcpy(login_field.Password, password(), sizeof(TThostFtdcPasswordType));
 	//version
-	safe_strcpy(login_field.UserProductInfo, "EasyTrader", sizeof(TThostFtdcProductInfoType));
+	Utils::safe_strcpy(login_field.UserProductInfo, "", sizeof(TThostFtdcProductInfoType));
 	int reqid = GetRequestId();
 	md_api_->ReqUserLogin(&login_field, reqid);
 }
@@ -166,9 +199,9 @@ void CThostMdApiWrapper::ReqUserLogin()
 void CThostMdApiWrapper::ReqUserLogout()
 {
 	CThostFtdcUserLogoutField logout_field;
-	memset(&logout_field, 0, sizeof(CThostFtdcReqUserLoginField));
-	safe_strcpy(logout_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
-	safe_strcpy(logout_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
+	memset(&logout_field, 0, sizeof(CThostFtdcUserLogoutField));
+	Utils::safe_strcpy(logout_field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(logout_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
 	int reqid = GetRequestId();
 	md_api_->ReqUserLogout(&logout_field, reqid);
 }
@@ -223,7 +256,7 @@ void CThostMdApiWrapper::Subscribe(const std::set<std::string>& instruments)
 	for (auto it = instruments.begin(); it != instruments.end(); it++) {
 		int index = std::distance(instruments.begin(), it);
 		instrument_ids[index] = new char[it->length() + 1];
-		safe_strcpy(instrument_ids[index], it->c_str(), it->length() + 1);
+		Utils::safe_strcpy(instrument_ids[index], it->c_str(), it->length() + 1);
 
 		int timer_id = GetTimerId();
 		instrument2timer_id_.insert(std::make_pair(*it, timer_id));
@@ -251,7 +284,7 @@ void CThostMdApiWrapper::Unsubscribe(const std::set<std::string>& instruments)
 	for (auto it = instruments.begin(); it != instruments.end(); it++) {
 		int index = std::distance(instruments.begin(), it);
 		instrument_ids[index] = new char[it->length() + 1];
-		safe_strcpy(instrument_ids[index], it->c_str(), it->length() + 1);
+		Utils::safe_strcpy(instrument_ids[index], it->c_str(), it->length() + 1);
 	}
 
 	md_api_->UnSubscribeMarketData(instrument_ids, instruments.size());
@@ -270,7 +303,7 @@ void CThostMdApiWrapper::OnFrontConnected(CThostSpiMessage* msg)
 	ExitTimer(connect_timer_id_);
 	connected_ = true;
 	if (gui_action_) {
-		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_ConnectSuccess, "行情服务器连接成功");
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_MdConnectSuccess, "行情服务器连接成功");
 	}
 	ReqUserLogin();
 }
@@ -279,14 +312,15 @@ void CThostMdApiWrapper::OnFrontDisconnected(CThostSpiMessage* msg)
 {
 	connected_ = false;
 	if (gui_action_) {
-		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_Disconnected, "交易服务器断链");
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_MdDisconnected, "交易服务器断链");
 	}
 
 	if (force_logout_) {
-		if (md_api_) {
-			md_api_->Release();
-			md_api_ = NULL;
-		}
+// 		if (md_api_) {
+// 			md_api_->Release();
+// 			md_api_ = NULL;
+// 		}
+		::SetEvent(logout_event_);
 	}
 }
 
@@ -294,7 +328,7 @@ void CThostMdApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 {
 	if (msg->rsp_field()->ErrorID) {
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginFailed,
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_MdLoginFailed,
 				"登录行情服务器失败",
 				msg->rsp_field()->ErrorID,
 				msg->rsp_field()->ErrorMsg);
@@ -303,7 +337,7 @@ void CThostMdApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 	else {
 		logined_ = true;
 		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LoginSuccess, "登录行情服务器成功");
+			gui_action_->OnLoginProcess(ApiEvent::ApiEvent_MdLoginSuccess, "登录行情服务器成功");
 		}
 
 		if (login_times_) { // 如果登录过，比如掉线重新连接的时候
@@ -325,7 +359,15 @@ void CThostMdApiWrapper::OnRspUserLogout(CThostSpiMessage* msg)
 {
 	logined_ = false;
 	if (gui_action_) {
-		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_LogoutSuccess, "行情服务器登录失败");
+		gui_action_->OnLoginProcess(ApiEvent::ApiEvent_MdLogoutSuccess, "行情服务器注销");
+	}
+
+	if (force_logout_) {
+// 		if (md_api_) {
+// 			md_api_->Release();
+// 			md_api_ = NULL;
+// 		}
+		::SetEvent(logout_event_);
 	}
 }
 
@@ -384,7 +426,11 @@ void CThostMdApiWrapper::OnRtnDepthMarketData(CThostSpiMessage* msg)
 		Quote quote(*f);
 
 		if (data_center_) {
-			data_center_->OnRtnQuote(quote);
+			quote = data_center_->OnRtnQuote(quote);
+		}
+
+		if (quote.instrument_id.empty()) {
+			return;
 		}
 
 		if (gui_action_) {

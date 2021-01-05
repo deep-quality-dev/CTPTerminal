@@ -156,10 +156,10 @@ void CTimeRegular::Init()
 
 bool CTimeRegular::WithIn(const TimeDuration& td, __time64_t timestamp)
 {
-	SYSTEMTIME start_time = GetSystemTime(td.start_time);
-	SYSTEMTIME end_time = GetSystemTime(td.end_time);
+	SYSTEMTIME start_time = Utils::GetSystemTime(td.start_time);
+	SYSTEMTIME end_time = Utils::GetSystemTime(td.end_time);
 
-	SYSTEMTIME systime = GetSystemTime(timestamp);
+	SYSTEMTIME systime = Utils::GetSystemTime(timestamp);
 	if (start_time.wDayOfWeek != systime.wDayOfWeek)
 		return false;
 

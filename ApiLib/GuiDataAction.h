@@ -1,16 +1,23 @@
 ﻿#pragma once
 
-#include "DataTypeDefs.h"
+#include "DataTypes/DataTypeDefs.h"
+#include <set>
 
 typedef enum API_EVENT {
-	ApiEvent_ConnectTimeout,
-	ApiEvent_ConnectSuccess,
-	ApiEvent_Disconnected,
+	ApiEvent_MdConnectTimeout,
+	ApiEvent_MdConnectSuccess,
+	ApiEvent_MdDisconnected,
+	ApiEvent_TradeConnectTimeout,
+	ApiEvent_TradeConnectSuccess,
+	ApiEvent_TradeDisconnected,
 	ApiEvent_AuthenticationFailed,
 	ApiEvent_AuthenticationSuccess,
-	ApiEvent_LoginFailed,
-	ApiEvent_LoginSuccess,
-	ApiEvent_LogoutSuccess,
+	ApiEvent_MdLoginFailed,
+	ApiEvent_MdLoginSuccess,
+	ApiEvent_MdLogoutSuccess,
+	ApiEvent_TradeLoginFailed,
+	ApiEvent_TradeLoginSuccess,
+	ApiEvent_TradeLogoutSuccess,
 	ApiEvent_SubscribeMarketData,
 	ApiEvent_UnsubscribeMarketData,
 	ApiEvent_QryOrderFailed,
@@ -26,7 +33,9 @@ typedef enum API_EVENT {
 	ApiEvent_QryInstrumentFailed,
 	ApiEvent_QryInstrumentSuccess,
 	ApiEvent_QryInstrumentMarginRateFailed,
-	ApiEvent_QryInstrumentMarginRateSuccess
+	ApiEvent_QryInstrumentMarginRateSuccess,
+	ApiEvent_QrySettlementInfoConfirmFailed,
+	ApiEvent_QrySettlementInfoConfirmSuccess
 
 } ApiEvent;
 

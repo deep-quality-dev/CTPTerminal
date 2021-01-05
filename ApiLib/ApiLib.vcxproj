@@ -84,8 +84,7 @@
     </Link>
     <Lib>
       <OutputFile>$(SolutionDir)\libs\$(Configuration)\$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalLibraryDirectories>
-      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>./</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -140,11 +139,12 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ConfigParser.h" />
     <ClInclude Include="DataCenter.h" />
     <ClInclude Include="DataTypes\DataTypeDefs.h" />
     <ClInclude Include="DataTypes\Formatter.h" />
     <ClInclude Include="DataTypes\FtdcTranslator.h" />
-    <ClInclude Include="DataTypes\GuiDataAction.h" />
+    <ClInclude Include="GuiDataAction.h" />
     <ClInclude Include="MarketDataApi.h" />
     <ClInclude Include="TimeRegular.h" />
     <ClInclude Include="TradeApi.h" />
@@ -166,6 +166,7 @@
     <ClInclude Include="WorkerThread.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ConfigParser.cpp" />
     <ClCompile Include="DataCenter.cpp" />
     <ClCompile Include="DataTypes\DataTypeDefs.cpp" />
     <ClCompile Include="DataTypes\Formatter.cpp" />

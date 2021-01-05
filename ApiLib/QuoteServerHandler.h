@@ -1,13 +1,13 @@
 ﻿#pragma once
 
-#include "DataTypes/GuiDataAction.h"
+#include "GuiDataAction.h"
 
 class CQuoteService;
 
 class CQuoteServerHandler : public IGuiDataAction
 {
 public:
-	CQuoteServerHandler(CQuoteService* quote_service);
+	CQuoteServerHandler();
 	~CQuoteServerHandler();
 
 	virtual void OnLoginProcess(ApiEvent api_event, const char* content = NULL, int error_id = 0, const char* error_msg = NULL);
@@ -30,8 +30,5 @@ public:
 	virtual void RefreshOrder(const Order& order);
 
 	virtual void RefreshTrade(const Trade& trade);
-
-private:
-	CQuoteService* quote_service_;
 };
 

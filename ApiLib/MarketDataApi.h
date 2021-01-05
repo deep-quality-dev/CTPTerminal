@@ -11,6 +11,8 @@ public:
 		const std::string& password,
 		const std::vector<std::string>& fronts) = 0;
 
+	virtual void Deinitialize() = 0;
+
 	virtual void Login() = 0;
 
 	virtual void Logout() = 0;

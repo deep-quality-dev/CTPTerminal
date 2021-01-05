@@ -21,13 +21,13 @@ TimeDuration TimeDuration::MakeTimeDuration(const std::string& product_id, int w
 	systime.wMinute = start_minute;
 	systime.wSecond = 0;
 
-	__time64_t start_time = CalcTimestampMilli(systime);
+	__time64_t start_time = Utils::CalcTimestampMilli(systime);
 
 	systime.wHour = end_hour;
 	systime.wMinute = end_minute;
 	systime.wSecond = 0;
 
-	__time64_t end_time = CalcTimestampMilli(systime);
+	__time64_t end_time = Utils::CalcTimestampMilli(systime);
 
 	return TimeDuration(product_id, start_time, end_time);
 }
@@ -119,7 +119,7 @@ Quote::Quote(const CThostFtdcDepthMarketDataField& field)
 {
 	trading_day = field.TradingDay;
 	if (trading_day.length() < 1) {
-		trading_day = GetCurrentDate();
+		trading_day = Utils::GetCurrentDate();
 	}
 
 	SetFromFtdcExchangeID(exchange_id, field.ExchangeID);
@@ -210,22 +210,22 @@ Quote::Quote(const CThostFtdcDepthMarketDataField& field)
 	}
 
 	if (ask_price1 == 0) {
-		if (CompareDouble(field.LastPrice, field.UpperLimitPrice) == 0)
+		if (Utils::CompareDouble(field.LastPrice, field.UpperLimitPrice) == 0)
 			ask_price1 = field.LastPrice;
-		else if (CompareDouble(field.LastPrice, field.LowerLimitPrice) == 0)
+		else if (Utils::CompareDouble(field.LastPrice, field.LowerLimitPrice) == 0)
 			ask_price1 = field.LastPrice;
 	}
 	if (bid_price1 == 0) {
-		if (CompareDouble(field.LastPrice, field.UpperLimitPrice) == 0)
+		if (Utils::CompareDouble(field.LastPrice, field.UpperLimitPrice) == 0)
 			bid_price1 = field.LastPrice;
-		else if (CompareDouble(field.LastPrice, field.LowerLimitPrice) == 0)
+		else if (Utils::CompareDouble(field.LastPrice, field.LowerLimitPrice) == 0)
 			bid_price1 = field.LastPrice;
 	}
 
 	trade_volume = field.Volume;
 	ask_volume1 = field.AskVolume1;
 	bid_volume1 = field.BidVolume1;
-	position_volume = field.OpenInterest;
+	position_volume = (int) field.OpenInterest;
 
 	std::string updatetime = field.UpdateTime;
 	if (updatetime == "") 
@@ -233,7 +233,7 @@ Quote::Quote(const CThostFtdcDepthMarketDataField& field)
 	std::string strtime = trading_day.substr(0, 4) + "-" + trading_day.substr(4, 2) + "-" + trading_day.substr(6, 2)
 		+ " " + updatetime;
 
-	last_time = CalcTimestamp(strtime);
+	last_time = Utils::CalcTimestamp(strtime);
 	if (field.UpdateMillisec) {
 		last_time += field.UpdateMillisec;
 	}
@@ -383,6 +383,21 @@ Order::Order(CThostFtdcOrderField& field)
 Order::Order(OrderKey& ref) : key(ref)
 {
 
+}
+
+Order::Order(CThostFtdcInputOrderField& field, OrderKey& key, int error_id, const std::string& error_msg)
+{
+	this->key = key;
+	instrument_id = field.InstrumentID;
+	SetFromFtdcDirection(direction, field.Direction);
+	SetFromFtdcOffsetflag(offset_flag, field.CombOffsetFlag[0]);
+	price = field.LimitPrice;
+	volume = field.VolumeTotalOriginal;
+	volume_traded = 0;
+	volume_remained = volume;
+	broker_order_seq = 0;
+	status = (error_id ? Status_Error : Status_Unknown);
+	status_msg = error_msg;
 }
 
 bool Order::operator<(const Order& order) const

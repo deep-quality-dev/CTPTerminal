@@ -88,6 +88,12 @@ void WorkerThread<T>::ExitThread()
 	if (!thread_)
 		return;
 
+	// exit all the timers
+	while (timer_threads_.size() > 0) {
+		ExitTimer(timer_threads_.front()->timer_id);
+	}
+
+	// exit main thread
 	std::shared_ptr<ThreadMessage> msg(new ThreadMessage(MSG_EXIT, 0));
 	{
 		std::unique_lock<std::mutex> lk(mutex_);
@@ -100,6 +106,7 @@ void WorkerThread<T>::ExitThread()
 
 	if (timer_thread_) {
 		timer_thread_->join();
+		timer_thread_ = nullptr;
 	}
 }
 

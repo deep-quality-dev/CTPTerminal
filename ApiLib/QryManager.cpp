@@ -6,13 +6,11 @@
 
 CQryManager::CQryManager() : timer_id_(1024), current_query_timer_id_(99)
 {
-	CreateThread();
 }
 
 
 CQryManager::~CQryManager()
 {
-	ExitThread();
 }
 
 void CQryManager::AddQuery(const std::function<int()>& func, const std::string keyword)

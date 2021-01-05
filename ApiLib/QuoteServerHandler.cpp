@@ -6,7 +6,7 @@
 #include <sstream>
 
 
-CQuoteServerHandler::CQuoteServerHandler(CQuoteService* quote_service) : quote_service_(quote_service)
+CQuoteServerHandler::CQuoteServerHandler()
 {
 }
 
@@ -61,12 +61,14 @@ void CQuoteServerHandler::RefreshAccount(const TradingAccount& account)
 
 void CQuoteServerHandler::RefreshQuotes(const std::set<Quote>& quotes)
 {
-
+	
 }
 
 void CQuoteServerHandler::RefreshInstruments(const std::set<Instrument>& instruments)
 {
-	quote_service_->SetInstruments(instruments);
+	std::stringstream ss;
+	ss << "合约总数: " << instruments.size();
+	Utils::Log(ss.str());
 }
 
 void CQuoteServerHandler::RefreshInstrumentMarginRate(const InstrumentMarginRate& margin_rate)

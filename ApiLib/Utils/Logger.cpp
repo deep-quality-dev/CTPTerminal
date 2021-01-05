@@ -29,8 +29,8 @@ void Utils::Log(const std::string& data, bool to_console /*= false*/, int log_le
 	if (to_console) {
 		std::cout << GetCurrentDateTime() << " [INFO] " << data << std::endl;
 	}
-	if (log_level >= ENUM_LOG_LEVEL::LOG_LEVEL_INFO)
-		LOGI(data);
+ 	if (log_level >= ENUM_LOG_LEVEL::LOG_LEVEL_INFO)
+ 		LOGI(data);
 }
 
 void Utils::Log(const std::wstring& data, bool to_console /*= false*/, int log_level /*= ENUM_LOG_LEVEL::LOG_LEVEL_INFO*/)
@@ -40,6 +40,6 @@ void Utils::Log(const std::wstring& data, bool to_console /*= false*/, int log_l
 	if (to_console) {
 		std::cout << GetCurrentDateTime() << " [INFO] " << ConvertUnicode2Multibyte(data.c_str()).c_str() << std::endl;
 	}
-	if (log_level >= ENUM_LOG_LEVEL::LOG_LEVEL_INFO)
-		LOGI(ConvertUnicode2Multibyte(data.c_str()));
+ 	if (log_level >= ENUM_LOG_LEVEL::LOG_LEVEL_INFO)
+ 		LOGI(ConvertUnicode2Multibyte(data.c_str()));
 }
