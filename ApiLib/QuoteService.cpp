@@ -74,7 +74,6 @@ int CQuoteService::Login()
 	logined_ = false;
 	::ResetEvent(login_handle);
 
-	CConfigParser::LoadServerConfig("config.ini");
 	std::vector<MarketDataServerConfig> quote_server_configs =
 		CConfigParser::market_data_server_config();
 	TradeServerConfig trade_server_config =
@@ -191,8 +190,6 @@ void CQuoteService::InitTradeWrappers()
 		trade_server_config_.user_product_info,
 		trade_server_config_.auth_code,
 		trade_server_config_.app_id);
-
-	data_center_->set_trade_api(trade_api_);
 
 	trader_inited_ = true;
 }

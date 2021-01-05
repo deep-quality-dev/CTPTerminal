@@ -193,7 +193,9 @@
 #include <cmath>
 #include <stdlib.h>
 
+#ifndef WIN32
 #define WIN32
+#endif
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN

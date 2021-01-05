@@ -47,9 +47,9 @@ public:
 	virtual int ReqQryPosition();
 	virtual int ReqQryPositionDetail();
 	virtual int ReqQryDepthMarketData();
-	virtual void ReqInsertOrder(const OrderInsert& order_insert);
+	virtual int ReqInsertOrder(const OrderInsert& order_insert);
 	virtual void ReqQryMarginRate(const std::string& instrument_id);
-	virtual void ReqCancelOrder(const Order& order);
+	virtual int ReqCancelOrder(const Order& order);
 
 protected:
 	int ReqQryInstrumentMarginRate(const std::string& instrument_id);

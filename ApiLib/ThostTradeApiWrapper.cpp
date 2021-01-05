@@ -395,7 +395,7 @@ int CThostTradeApiWrapper::ReqQryDepthMarketData()
 	return ret < 0 ? ret : reqid;
 }
 
-void CThostTradeApiWrapper::ReqInsertOrder(const OrderInsert& order_insert)
+int CThostTradeApiWrapper::ReqInsertOrder(const OrderInsert& order_insert)
 {
 	CThostFtdcInputOrderField field;
 	memset(&field, 0, sizeof(CThostFtdcInputOrderField));
@@ -416,7 +416,8 @@ void CThostTradeApiWrapper::ReqInsertOrder(const OrderInsert& order_insert)
 	ss << order_insert.order_ref;
 	Utils::safe_strcpy(field.OrderRef, ss.str().c_str(), sizeof(TThostFtdcOrderRefType));
 	field.RequestID = GetRequestId();
-	trader_api_->ReqOrderInsert(&field, field.RequestID);
+	int ret = trader_api_->ReqOrderInsert(&field, field.RequestID);
+	return ret < 0 ? ret : field.RequestID;
 }
 
 void CThostTradeApiWrapper::ReqQryMarginRate(const std::string& instrument_id)
@@ -427,7 +428,7 @@ void CThostTradeApiWrapper::ReqQryMarginRate(const std::string& instrument_id)
 	}
 }
 
-void CThostTradeApiWrapper::ReqCancelOrder(const Order& order)
+int CThostTradeApiWrapper::ReqCancelOrder(const Order& order)
 {
 	CThostFtdcInputOrderActionField	field;
 	memset(&field, 0, sizeof(CThostFtdcInputOrderActionField));
@@ -437,6 +438,9 @@ void CThostTradeApiWrapper::ReqCancelOrder(const Order& order)
 	field.FrontID = front_id();
 	field.SessionID = session_id();
 	Utils::safe_strcpy(field.OrderSysID, order.order_sys_id.c_str(), sizeof(TThostFtdcOrderSysIDType));
+	field.RequestID = GetRequestId();
+	int ret = trader_api_->ReqOrderAction(&field, field.RequestID);
+	return ret < 0 ? ret : field.RequestID;
 }
 
 int CThostTradeApiWrapper::ReqQryInstrumentMarginRate(const std::string& instrument_id)
@@ -518,7 +522,7 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 		session_id_ = f->SessionID;
 		order_ref_ = atoi(f->MaxOrderRef);
 		if (data_center_) {
-			data_center_->SetOrderRef(order_ref_);
+			data_center_->set_order_ref(order_ref_);
 		}
 
 		logined_ = true;

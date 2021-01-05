@@ -7,12 +7,19 @@
 std::vector<MarketDataServerConfig> CConfigParser::quote_server_configs_;
 TradeServerConfig CConfigParser::trade_server_config_;
 
+std::string CConfigParser::main_instrument_id_;
+std::string CConfigParser::sub_instrument_id_;
+int CConfigParser::ma_period_;
+int CConfigParser::volume_;
+
 void CConfigParser::LoadServerConfig(const char* config_path)
 {
 	CIniManager ini_manager;
 	ini_manager.init_content();
 
 	ini_manager.load(Utils::GetRelativePath(config_path).c_str());
+
+	// Configuration of CTP servers
 	std::string broker_id = ini_manager.get_value("Trade", "broker_id");
 	std::string user_id = ini_manager.get_value("Trade", "user_id");
 	std::string password = ini_manager.get_value("Trade", "password");
@@ -58,4 +65,14 @@ void CConfigParser::LoadServerConfig(const char* config_path)
 	quote_server_configs_.push_back(md_server_config);
 
 	trade_server_config_ = trade_server_config;
+
+	// Configuration for Trading
+	main_instrument_id_ = ini_manager.get_value("Param", "main_instrument_id");
+	sub_instrument_id_ = ini_manager.get_value("Param", "sub_instrument_id");
+
+	std::string ma_period = ini_manager.get_value("Param", "ma_period");
+	std::string volume = ini_manager.get_value("Param", "volume");
+
+	ma_period_ = std::atoi(ma_period.c_str());
+	volume_ = std::atoi(volume.c_str());
 }

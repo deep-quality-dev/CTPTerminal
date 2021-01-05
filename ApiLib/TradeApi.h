@@ -35,9 +35,9 @@ public:
 
 	virtual int ReqQryDepthMarketData() = 0;
 
-	virtual void ReqInsertOrder(const OrderInsert& order_insert) = 0;
+	virtual int ReqInsertOrder(const OrderInsert& order_insert) = 0;
 
-	virtual void ReqCancelOrder(const Order& order) = 0;
+	virtual int ReqCancelOrder(const Order& order) = 0;
 
 	// 查询保证金比率
 	virtual void ReqQryMarginRate(const std::string& instrument_id) = 0;

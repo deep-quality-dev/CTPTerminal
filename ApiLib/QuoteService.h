@@ -6,6 +6,7 @@
 #include "QuoteServerHandler.h"
 #include "MarketDataApi.h"
 #include "TradeApi.h"
+#include "ArbitrageStrategy.h"
 #include <vector>
 #include <memory>
 

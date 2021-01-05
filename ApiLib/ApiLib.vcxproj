@@ -151,6 +151,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArbitrageStrategy.h" />
     <ClInclude Include="ConfigParser.h" />
     <ClInclude Include="DataCenter.h" />
     <ClInclude Include="DataTypes\DataTypeDefs.h" />
@@ -158,6 +159,9 @@
     <ClInclude Include="DataTypes\FtdcTranslator.h" />
     <ClInclude Include="GuiDataAction.h" />
     <ClInclude Include="MarketDataApi.h" />
+    <ClInclude Include="StepStrategy.h" />
+    <ClInclude Include="Strategy.h" />
+    <ClInclude Include="StrategyDataCenter.h" />
     <ClInclude Include="TimeRegular.h" />
     <ClInclude Include="TradeApi.h" />
     <ClInclude Include="QryManager.h" />
@@ -178,6 +182,7 @@
     <ClInclude Include="WorkerThread.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ArbitrageStrategy.cpp" />
     <ClCompile Include="ConfigParser.cpp" />
     <ClCompile Include="DataCenter.cpp" />
     <ClCompile Include="DataTypes\DataTypeDefs.cpp" />
@@ -192,6 +197,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="StepStrategy.cpp" />
+    <ClCompile Include="Strategy.cpp" />
+    <ClCompile Include="StrategyDataCenter.cpp" />
     <ClCompile Include="ThostMdApiWrapper.cpp" />
     <ClCompile Include="ThostTradeApiWrapper.cpp" />
     <ClCompile Include="TimeRegular.cpp" />

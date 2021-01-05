@@ -1,13 +1,12 @@
 ﻿#include "stdafx.h"
 #include "DataCenter.h"
 #include "TimeRegular.h"
-#include "TradeApi.h"
-#include "Utils/Utils.h"
 #include "Utils/Logger.h"
+#include "Utils/Utils.h"
 #include <sstream>
 
 
-CDataCenter::CDataCenter() : trade_api_(0)
+CDataCenter::CDataCenter()
 {
 	order_ref_ = 0;
 }
@@ -163,97 +162,64 @@ void CDataCenter::OnRtnTrade(const Trade& trade)
 		auto it_order = order_ref2order_.find(order_ref);
 		if (it_order != order_ref2order_.end()) {
 			if (trade.offset_flag == Open) {
-// 				bool found = false;
-// 				for (auto it_position = positions_.begin();
-// 					it_position != positions_.end(); it_position++) {
-// 					if (it_position->instrument_id == trade.instrument_id && it_position->direction == trade.direction) {
-// 						Position position = *it_position;
-// 						position.position_cost = (position.position_cost * position.volume() + trade.volume * trade.price) / (position.volume() + trade.volume);
-// 						position.today_volume += trade.volume;
-// 						positions_.erase(it_position);
-// 						positions_.insert(position);
-// 						found = true;
-// 						break;
-// 					}
-// 				}
-// 
-// 				if (!found) {
-// 					Position position(trade.instrument_id, trade.direction);
-// 					position.exchange_id = trade.exchange_id;
-// 					position.today_volume = trade.volume;
-// 					position.position_cost = trade.price;
-// 					positions_.insert(position);
-// 				}
+				bool found = false;
+				for (auto it_position = positions_.begin();
+					it_position != positions_.end(); it_position++) {
+					if (it_position->instrument_id == trade.instrument_id && it_position->direction == trade.direction) {
+						Position position = *it_position;
+						position.position_cost = (position.position_cost * position.volume() + trade.volume * trade.price) / (position.volume() + trade.volume);
+						position.today_volume += trade.volume;
+						positions_.erase(it_position);
+						positions_.insert(position);
+						found = true;
+						break;
+					}
+				}
+
+				if (!found) {
+					Position position(trade.instrument_id, trade.direction);
+					position.exchange_id = trade.exchange_id;
+					position.today_volume = trade.volume;
+					position.position_cost = trade.price;
+					positions_.insert(position);
+				}
 			}
 			else {
-// 				int volume_traded = trade.volume;
-// 				while (volume_traded > 0) {
-// 					for (auto it_position = positions_.begin();
-// 						it_position != positions_.end(); it_position++) {
-// 						if (it_position->instrument_id == trade.instrument_id &&
-// 							it_position->direction == trade.direction) {
-// 							Position pos = *it_position;
-// 
-// 							int v = min(volume_traded, pos.yesterday_volume);
-// 							volume_traded -= v;
-// 							pos.yesterday_volume -= v;
-// 
-// 							v = min(volume_traded, pos.today_volume);
-// 							volume_traded -= v;
-// 							pos.today_volume -= v;
-// 
-// 							if (pos.today_volume + pos.yesterday_volume == 0) {
-// 								positions_.erase(pos);
-// 								break;
-// 							}
-// 							else {
-// 								positions_.erase(it_position);
-// 								positions_.insert(pos);
-// 							}
-// 						}
-// 					}
-// 				}
+				int volume_traded = trade.volume;
+				while (volume_traded > 0) {
+					for (auto it_position = positions_.begin();
+						it_position != positions_.end(); it_position++) {
+						if (it_position->instrument_id == trade.instrument_id &&
+							it_position->direction == trade.direction) {
+							Position pos = *it_position;
+
+							int v = min(volume_traded, pos.yesterday_volume);
+							volume_traded -= v;
+							pos.yesterday_volume -= v;
+
+							v = min(volume_traded, pos.today_volume);
+							volume_traded -= v;
+							pos.today_volume -= v;
+
+							if (pos.today_volume + pos.yesterday_volume == 0) {
+								positions_.erase(pos);
+								break;
+							}
+							else {
+								positions_.erase(it_position);
+								positions_.insert(pos);
+							}
+						}
+					}
+				}
 			}
 
 			CalcPositionProfit();
 
 			if (ontrade_callback_) {
-				ontrade_callback_(trade);
+				ontrade_callback_(order_ref, trade);
 			}
 		}
-	}
-}
-
-void CDataCenter::InsertOrder(const std::string& instrument_id, OffsetFlag offset_flag, Direction direction, double price, int volume)
-{
-	OrderInsert order_insert;
-	order_insert.instrument_id = instrument_id;
-	order_insert.offset_flag = offset_flag;
-	order_insert.direction = direction;
-	order_insert.limit_price = price;
-	order_insert.volume = volume;
-	order_insert.order_ref = ++order_ref_;
-
-	if (trade_api_) {
-		trade_api_->ReqInsertOrder(order_insert);
-	}
-}
-
-void CDataCenter::InsertMarketOrder(const std::string& instrument_id, OffsetFlag offset_flag, Direction direction, int volume)
-{
-	// NOTE: 上期所不支持市价报单
-
-	OrderInsert order_insert;
-	order_insert.instrument_id = instrument_id;
-	order_insert.offset_flag = offset_flag;
-	order_insert.direction = direction;
-	order_insert.is_market_order = false;
-	order_insert.limit_price = GetMarketPrice(instrument_id, direction);
-	order_insert.volume = volume;
-	order_insert.order_ref = ++order_ref_;
-
-	if (trade_api_) {
-		trade_api_->ReqInsertOrder(order_insert);
 	}
 }
 
@@ -314,6 +280,32 @@ double CDataCenter::GetMarketPrice(const std::string& instrument_id, Direction d
 void CDataCenter::CalcPositionProfit()
 {
 	std::unique_lock<std::mutex> lk(mutex_positions_);
+
+	std::set<Position> positions_bk;
+	for (auto it_position = positions_.begin();
+		it_position != positions_.end(); it_position++) {
+		auto it_quote = quotes_.find(it_position->instrument_id);
+		if (it_quote == quotes_.end()) {
+			continue;
+		}
+
+		Quote* quote = it_quote->second[1];
+		if (quote == NULL) {
+			continue;
+		}
+
+		auto it_instrument = instruments_.find(quote->instrument_id);
+		if (it_position->instrument_id == quote->instrument_id && it_instrument != instruments_.end()) {
+			Position position = *it_position;
+			int signal = it_position->direction == Buy ? 1 : -1;
+			position.profit = signal * (quote->last_price - it_position->position_cost) * (it_position->today_volume + it_position->yesterday_volume) * it_instrument->volume_multiple;
+			positions_bk.insert(position);
+		}
+		else {
+			positions_bk.insert(*it_position); // ERROR
+		}
+	}
+	positions_ = positions_bk;
 
 	std::set<PositionDetail> position_details_bk;
 	for (auto it_position = position_details_.begin();
