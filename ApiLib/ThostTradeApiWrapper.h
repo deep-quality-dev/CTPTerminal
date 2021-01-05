@@ -29,6 +29,8 @@ public:
 		const std::string& app_id);
 	virtual void Deinitialize();
 
+	const char* GetApiVersion();
+
 	virtual void Login();
 	virtual void Logout();
 

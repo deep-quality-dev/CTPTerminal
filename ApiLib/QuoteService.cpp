@@ -74,7 +74,7 @@ int CQuoteService::Login()
 	logined_ = false;
 	::ResetEvent(login_handle);
 
-	CConfigParser::LoadServerConfig("ctp.ini");
+	CConfigParser::LoadServerConfig("config.ini");
 	std::vector<MarketDataServerConfig> quote_server_configs =
 		CConfigParser::market_data_server_config();
 	TradeServerConfig trade_server_config =

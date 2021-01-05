@@ -57,8 +57,8 @@ public:
 		AddMsg(new CThostSpiMessage(SPI::OnRspUserLogout, pUserLogout, pRspInfo, nRequestID, bIsLast));
 	}
 
-	///请求查询组播合约响应
-	virtual void OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
+// 	///请求查询组播合约响应
+// 	virtual void OnRspQryMulticastInstrument(CThostFtdcMulticastInstrumentField *pMulticastInstrument, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {}
 
 	///错误应答
 	virtual void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {};

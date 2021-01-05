@@ -156,6 +156,8 @@ void CThostTradeApiWrapper::Initialize(const std::string& broker_id,
 
 	CThostBaseWrapper::Initialize(broker_id, user_id, password, fronts);
 
+	Utils::Log(std::string("API版本: ") + GetApiVersion());
+
 	user_product_info_ = user_product_info;
 	auth_code_ = auth_code;
 	app_id_ = app_id;
@@ -188,6 +190,14 @@ void CThostTradeApiWrapper::Deinitialize()
 		delete trader_spi_handler_;
 		trader_spi_handler_ = NULL;
 	}
+}
+
+const char* CThostTradeApiWrapper::GetApiVersion()
+{
+	if (trader_api_) {
+		return trader_api_->GetApiVersion();
+	}
+	return "";
 }
 
 void CThostTradeApiWrapper::Login()
