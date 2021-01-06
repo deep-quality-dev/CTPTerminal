@@ -21,6 +21,8 @@ public:
 
 	virtual void Initialize() = 0;
 
+	virtual void CheckForceSettle() = 0;
+
 	virtual void OnQuoteCallback(const Quote& quote) = 0;
 	virtual void OnOrderCallback(const Order& order) = 0;
 	virtual void OnTradeCallback(int order_ref, const Trade& trade) = 0;

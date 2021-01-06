@@ -31,6 +31,26 @@ void CStepStrategy::Initialize()
 	REGISTER_CLOSE_SIGNAL_FUNC(Direction::Sell, "MA下穿现价", MASellCross, main_instrument_id(), sub_instrument_id(), ma_period(), 0, 0);
 }
 
+void CStepStrategy::CheckForceSettle()
+{
+	// 如果平仓盈亏达到70%以上的资金，立即强制并停止运行
+	double profit = account_.close_profit + account_.position_profit;
+
+	if (profit < 0 && account_.available * 0.75 <= abs(profit)) {
+		int pos_volume = 0, order_ref = -1;
+		if ((pos_volume = HasSellPosition(main_instrument_id())) > 0) {
+			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Buy, pos_volume);
+		}
+		else if ((pos_volume = HasBuyPosition(main_instrument_id())) > 0) {
+			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, pos_volume);
+		}
+		if (order_ref > 0) {
+			pending_order_refs_.insert(order_ref);
+		}
+		set_enable_trade(false);
+	}
+}
+
 void CStepStrategy::OnQuoteCallback(const Quote& quote)
 {
 	if (!PushQuote(quote)) {
@@ -40,6 +60,8 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 	if (pending_order_refs_.size() > 0) {
 		return;
 	}
+
+	CheckForceSettle();
 
 	int pos_volume = 0, order_ref = -1;
 	if ((pos_volume = HasSellPosition(main_instrument_id())) > 0) {
@@ -131,7 +153,7 @@ void CStepStrategy::OnTradeCallback(int order_ref, const Trade& trade)
 
 void CStepStrategy::OnTradeAccountCallback(const TradingAccount& account)
 {
-	
+	account_ = account;
 }
 
 bool CStepStrategy::PushQuote(const Quote& quote)

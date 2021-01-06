@@ -45,7 +45,9 @@ public:
 		ma_period_ = period;
 	}
 
-	virtual void Initialize();
+	virtual void Initialize() override;
+
+	virtual void CheckForceSettle() override;
 
 	virtual void OnQuoteCallback(const Quote& quote) override;
 	virtual void OnOrderCallback(const Order& order) override;
@@ -69,6 +71,8 @@ private:
 	int ma_period_;
 
 	std::map<std::string, std::deque<Quote>> quotes_map_;
+
+	TradingAccount account_;
 
 	std::map<SignalFuncKey, std::function<bool()>> open_signals_;
 	std::map<SignalFuncKey, std::function<bool()>> close_signals_;
