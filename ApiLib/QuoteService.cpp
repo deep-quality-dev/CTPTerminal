@@ -122,10 +122,6 @@ void CQuoteService::SetInstruments(const std::set<Instrument>& instruments)
 {
 	instruments_ = instruments;
 
-	std::stringstream ss;
-	ss << "查询合约结束：总共 " << instruments.size();
-	Utils::Log(ss.str());
-
 	CheckSubscribes();
 }
 
@@ -289,6 +285,7 @@ void CQuoteService::RefreshQuotes(const std::set<Quote>& quotes)
 void CQuoteService::RefreshInstruments(const std::set<Instrument>& instruments)
 {
 	CQuoteServerHandler::RefreshInstruments(instruments);
+	SetInstruments(instruments);
 }
 
 void CQuoteService::RefreshInstrumentMarginRate(const InstrumentMarginRate& margin_rate)

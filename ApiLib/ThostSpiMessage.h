@@ -24,6 +24,8 @@ public:
 		OnRspQryInstrument,
 		OnRspQryDepthMarketData,
 		OnRspQryInvestorPositionDetail,
+		OnRspSettlementInfoConfirm,
+		OnRspQrySettlementInfo,
 		OnRspQrySettlementInfoConfirm,
 		OnRtnOrder,
 		OnRtnTrade,

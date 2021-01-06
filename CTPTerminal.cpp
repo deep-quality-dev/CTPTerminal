@@ -5,6 +5,7 @@
 #include "ConfigParser.h"
 #include "QuoteService.h"
 #include "ArbitrageStrategy.h"
+#include "StepStrategy.h"
 #include "Utils/Logger.h"
 #include <set>
 #include <sstream>
@@ -49,11 +50,20 @@ int main()
 	subscribe_products.insert("v"); // PVC
 
 #else
-	CArbitrageStrategy strategy(&data_center, quote_service.trade_api());
+	CStepStrategy strategy(&data_center, quote_service.trade_api());
+	// CArbitrageStrategy strategy(&data_center, quote_service.trade_api());
 
-	data_center.SetQuoteCallback(std::bind(&CArbitrageStrategy::OnQuoteCallback, &strategy, std::placeholders::_1));
-	data_center.SetOnTradeCallback(std::bind(&CArbitrageStrategy::OnTradeCallback, &strategy, std::placeholders::_1, std::placeholders::_2));
-	data_center.SetOnTradeAccountCallback(std::bind(&CArbitrageStrategy::OnTradeAccountCallback, &strategy, std::placeholders::_1));
+	strategy.set_main_instrument_id(CConfigParser::main_instrument_id());
+	strategy.set_sub_instrument_id(CConfigParser::sub_instrument_id());
+	strategy.set_ma_period(CConfigParser::ma_period());
+	strategy.set_volume(CConfigParser::volume());
+
+	data_center.SetQuoteCallback(std::bind(&CStepStrategy::OnQuoteCallback, &strategy, std::placeholders::_1));
+	data_center.SetOnOrderCallback(std::bind(&CStepStrategy::OnOrderCallback, &strategy, std::placeholders::_1));
+	data_center.SetOnTradeCallback(std::bind(&CStepStrategy::OnTradeCallback, &strategy, std::placeholders::_1, std::placeholders::_2));
+	data_center.SetOnTradeAccountCallback(std::bind(&CStepStrategy::OnTradeAccountCallback, &strategy, std::placeholders::_1));
+
+	strategy.Initialize();
 
 	subscribe_products.insert("au"); // »Æ½ð
 	quote_service.SetSubscribeProducts(subscribe_products);
@@ -64,8 +74,9 @@ int main()
 		Utils::Log("3: ReqQryTrade");
 		Utils::Log("4: ReqQryPosition");
 		Utils::Log("5: ReqQryMarginRate");
-		Utils::Log("6: ReqInsertMarketOrder(Open/Buy/1)");
-		Utils::Log("7: ReqInsertMarketOrder(Close/Sell/1)");
+		Utils::Log("6: StartTrade");
+		Utils::Log("7: ReqInsertMarketOrder(Open/Buy/1)");
+		Utils::Log("8: ReqInsertMarketOrder(Close/Sell/1)");
 
 		int choose;
 		std::cin >> choose;
@@ -91,10 +102,14 @@ int main()
 			break;
 
 		case 6:
-			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Open, Direction::Buy, 1);
+			strategy.set_enable_trade(true);
 			break;
 
 		case 7:
+			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Open, Direction::Buy, 1);
+			break;
+
+		case 8:
 			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Close, Direction::Sell, 1);
 			break;
 

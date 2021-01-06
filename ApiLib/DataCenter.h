@@ -39,6 +39,10 @@ public:
 	void SetQuoteCallback(const OnQuoteCallback& callback) {
 		quote_callback_ = callback;
 	}
+	typedef std::function<void(const Order&)> OnOrderCallback;
+	void SetOnOrderCallback(const OnOrderCallback& callback) {
+		onorder_callback_ = callback;
+	}
 	typedef std::function<void(int, const Trade&)> OnTradeCallback;
 	void SetOnTradeCallback(const OnTradeCallback& callback) {
 		ontrade_callback_ = callback;
@@ -70,6 +74,7 @@ protected:
 	IGuiDataAction* gui_action_;
 
 	OnQuoteCallback quote_callback_;
+	OnOrderCallback onorder_callback_;
 	OnTradeCallback ontrade_callback_;
 	OnTradeAccountCallback onaccount_callback_;
 

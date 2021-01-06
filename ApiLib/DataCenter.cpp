@@ -153,6 +153,10 @@ void CDataCenter::OnRtnOrder(const Order& order)
 // 			InsertOrder(order.instrument_id, order.offset_flag, order.direction, price, order.volume_remained);
 // 		}
 	}
+
+	if (onorder_callback_) {
+		onorder_callback_(order);
+	}
 }
 
 void CDataCenter::OnRtnTrade(const Trade& trade)
@@ -191,7 +195,7 @@ void CDataCenter::OnRtnTrade(const Trade& trade)
 					for (auto it_position = positions_.begin();
 						it_position != positions_.end(); it_position++) {
 						if (it_position->instrument_id == trade.instrument_id &&
-							it_position->direction == trade.direction) {
+							it_position->direction != trade.direction) {
 							Position pos = *it_position;
 
 							int v = min(volume_traded, pos.yesterday_volume);
@@ -219,10 +223,6 @@ void CDataCenter::OnRtnTrade(const Trade& trade)
 
 			if (ontrade_callback_) {
 				ontrade_callback_(order_ref, trade);
-			}
-
-			if (gui_action_) {
-				gui_action_->RefreshPositions(positions_);
 			}
 		}
 	}
@@ -291,11 +291,13 @@ void CDataCenter::CalcPositionProfit()
 		it_position != positions_.end(); it_position++) {
 		auto it_quote = quotes_.find(it_position->instrument_id);
 		if (it_quote == quotes_.end()) {
+			positions_bk.insert(*it_position); // ERROR
 			continue;
 		}
 
 		Quote* quote = it_quote->second[1];
 		if (quote == NULL) {
+			positions_bk.insert(*it_position); // ERROR
 			continue;
 		}
 
@@ -318,11 +320,13 @@ void CDataCenter::CalcPositionProfit()
 
 		auto it_quote = quotes_.find(it_position->instrument_id);
 		if (it_quote == quotes_.end()) {
+			position_details_bk.insert(*it_position); // ERROR
 			continue;
 		}
 
 		Quote* quote = it_quote->second[1];
 		if (quote == NULL) {
+			position_details_bk.insert(*it_position); // ERROR
 			continue;
 		}
 

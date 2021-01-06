@@ -97,6 +97,16 @@ void CThostTradeApiWrapper::OnProcessMsg(CThostSpiMessage* msg)
 		OnRspQryInvestorPositionDetail(msg);
 		break;
 	}
+	case SPI::OnRspSettlementInfoConfirm:
+	{
+		OnRspSettlementInfoConfirm(msg);
+		break;
+	}
+	case SPI::OnRspQrySettlementInfo:
+	{
+		OnRspQrySettlementInfo(msg);
+		break;
+	}
 	case SPI::OnRspQrySettlementInfoConfirm:
 	{
 		OnRspQrySettlementInfoConfirm(msg);
@@ -296,6 +306,17 @@ void CThostTradeApiWrapper::ReqUserLogout()
 	Utils::safe_strcpy(logout_field.UserID, user_id(), sizeof(TThostFtdcUserIDType));
 	int reqid = GetRequestId();
 	trader_api_->ReqUserLogout(&logout_field, reqid);
+}
+
+int CThostTradeApiWrapper::ReqSettlementInfo()
+{
+	CThostFtdcSettlementInfoConfirmField field;
+	memset(&field, 0, sizeof(CThostFtdcSettlementInfoConfirmField));
+	Utils::safe_strcpy(field.BrokerID, broker_id(), sizeof(TThostFtdcBrokerIDType));
+	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
+	int reqid = GetRequestId();
+	int ret = trader_api_->ReqSettlementInfoConfirm(&field, reqid);
+	return ret < 0 ? ret : reqid;
 }
 
 int CThostTradeApiWrapper::ReqQrySettlementInfoConfirm()
@@ -560,7 +581,8 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryAllInstrument, this), "查询合约");
 // 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryOrder, this), "查询委托");
 // 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryTrade, this), "查询成交");
-			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPositionDetail, this), "查询持仓");
+			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPosition, this), "查询持仓");
+			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPositionDetail, this), "查询持仓明细");
 		}
 
 		login_times_++;
@@ -621,10 +643,10 @@ void CThostTradeApiWrapper::OnRtnOrder(CThostSpiMessage* msg)
 						gui_action_->RefreshTrade(trade);
 					}
 
-// 					std::set<Position> positions = data_center_->positions();
-// 					if (gui_action_) {
-// 						gui_action_->RefreshPositions(positions);
-// 					}
+					std::set<Position> positions = data_center_->positions();
+					if (gui_action_) {
+						gui_action_->RefreshPositions(positions);
+					}
 				}
 			}
 		}
@@ -656,10 +678,10 @@ void CThostTradeApiWrapper::OnRtnTrade(CThostSpiMessage* msg)
 					gui_action_->RefreshTrade(trade);
 				}
 
-// 				std::set<Position> positions = data_center_->positions();
-// 				if (gui_action_) {
-// 					gui_action_->RefreshPositions(positions);
-// 				}
+				std::set<Position> positions = data_center_->positions();
+				if (gui_action_) {
+					gui_action_->RefreshPositions(positions);
+				}
 			}
 		}
 		else {
@@ -801,7 +823,7 @@ void CThostTradeApiWrapper::OnRspQryInvestorPosition(CThostSpiMessage* msg)
 				[&position](const Position& pp) {
 				return pp.instrument_id == position.instrument_id && pp.direction == position.direction;
 			});
-			if (it_position != positions_cache_.end()) {
+			if (it_position == positions_cache_.end()) {
 				positions_cache_.insert(position);
 			}
 			else {
@@ -814,11 +836,6 @@ void CThostTradeApiWrapper::OnRspQryInvestorPosition(CThostSpiMessage* msg)
 				positions_cache_.insert(position);
 			}
 		}
-
-		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_QryPositionSuccess,
-				("查询持仓成功, " + position.instrument_id).c_str());
-		}
 	}
 
 	if (msg->is_last()) {
@@ -828,6 +845,10 @@ void CThostTradeApiWrapper::OnRspQryInvestorPosition(CThostSpiMessage* msg)
 
 		if (gui_action_) {
 			gui_action_->RefreshPositions(positions_cache_);
+		}
+
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryPositionSuccess, "查询持仓成功");
 		}
 		positions_cache_.clear();
 	}
@@ -969,6 +990,49 @@ void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg
 			gui_action_->OnLoginProcess(ApiEvent_QryPositionDetailSuccess, "查询持仓明细成功");
 		}
 		position_details_cache_.clear();
+	}
+}
+
+void CThostTradeApiWrapper::OnRspSettlementInfoConfirm(CThostSpiMessage* msg)
+{
+	if (msg->rsp_field()->ErrorID) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_SettlementInfoFailed,
+				"申请确认结算单失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
+		return;
+	}
+	if (gui_action_) {
+		gui_action_->OnLoginProcess(ApiEvent_SettlementInfoSuccess, "结算单已确认");
+	}
+}
+
+void CThostTradeApiWrapper::OnRspQrySettlementInfo(CThostSpiMessage* msg)
+{
+	CThostFtdcSettlementInfoField* f = msg->GetFieldPtr<CThostFtdcSettlementInfoField>();
+	if (msg->rsp_field()->ErrorID) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QrySettlementInfoFailed,
+				"查询投资者结算结果失败",
+				msg->rsp_field()->ErrorID,
+				msg->rsp_field()->ErrorMsg);
+		}
+		return;
+	}
+	if (f) {
+		settement_info_.append(f->Content);
+	}
+
+	if (msg->is_last()) {
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QrySettlementInfoSuccess, "查询投资者结算结果成功");
+		}
+		Utils::Log(settement_info_);
+		settement_info_.clear();
+
+		qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqSettlementInfo, this), "申请确认结算单");
 	}
 }
 

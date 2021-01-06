@@ -38,6 +38,7 @@ public:
 	void ReqAuthenticate();
 	void ReqUserLogin();
 	void ReqUserLogout();
+	int ReqSettlementInfo();
 	int ReqQrySettlementInfoConfirm();
 	int ReqQrySettlementInfo(unsigned int date);
 	virtual int ReqQryTradingAccount();
@@ -71,6 +72,8 @@ protected:
 	void OnRspQryInstrument(CThostSpiMessage* msg);
 	void OnRspQryDepthMarketData(CThostSpiMessage* msg);
 	void OnRspQryInvestorPositionDetail(CThostSpiMessage* msg);
+	void OnRspSettlementInfoConfirm(CThostSpiMessage* msg);
+	void OnRspQrySettlementInfo(CThostSpiMessage* msg);
 	void OnRspQrySettlementInfoConfirm(CThostSpiMessage* msg);
 
 private:
@@ -89,6 +92,8 @@ private:
 	HANDLE logout_event_;
 
 	int connect_timer_id_; // 检查连接的定时ID
+
+	std::string settement_info_;
 
 	std::set<Instrument> instruments_cache_;
 	std::set<Order> orders_cache_;

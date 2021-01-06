@@ -35,7 +35,11 @@ typedef enum API_EVENT {
 	ApiEvent_QryInstrumentMarginRateFailed,
 	ApiEvent_QryInstrumentMarginRateSuccess,
 	ApiEvent_QrySettlementInfoConfirmFailed,
-	ApiEvent_QrySettlementInfoConfirmSuccess
+	ApiEvent_QrySettlementInfoConfirmSuccess,
+	ApiEvent_QrySettlementInfoFailed,
+	ApiEvent_QrySettlementInfoSuccess,
+	ApiEvent_SettlementInfoFailed,
+	ApiEvent_SettlementInfoSuccess,
 
 } ApiEvent;
 

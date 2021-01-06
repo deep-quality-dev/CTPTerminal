@@ -48,6 +48,7 @@ public:
 	virtual void Initialize();
 
 	virtual void OnQuoteCallback(const Quote& quote) override;
+	virtual void OnOrderCallback(const Order& order) override;
 	virtual void OnTradeCallback(int order_ref, const Trade& trade) override;
 	virtual void OnTradeAccountCallback(const TradingAccount& account) override;
 

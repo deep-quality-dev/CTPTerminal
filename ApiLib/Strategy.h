@@ -3,7 +3,7 @@
 class IStrategy
 {
 public:
-	IStrategy(CDataCenter* data_center, ITradeApi* trade_api) : trade_api_(trade_api), data_center_(data_center), order_ref_(0) {}
+	IStrategy(CDataCenter* data_center, ITradeApi* trade_api) : trade_api_(trade_api), data_center_(data_center), order_ref_(0), is_enable_trade_(false) {}
 
 	CDataCenter* data_center() {
 		return data_center_;
@@ -12,9 +12,17 @@ public:
 		data_center_ = data_center;
 	}
 
+	bool is_enable_trade() {
+		return is_enable_trade_;
+	}
+	void set_enable_trade(bool enabled) {
+		is_enable_trade_ = enabled;
+	}
+
 	virtual void Initialize() = 0;
 
 	virtual void OnQuoteCallback(const Quote& quote) = 0;
+	virtual void OnOrderCallback(const Order& order) = 0;
 	virtual void OnTradeCallback(int order_ref, const Trade& trade) = 0;
 	virtual void OnTradeAccountCallback(const TradingAccount& account) = 0;
 
@@ -34,4 +42,5 @@ protected:
 
 	int order_ref_;
 
+	bool is_enable_trade_;
 };

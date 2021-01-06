@@ -42,7 +42,7 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 	}
 
 	int pos_volume = 0, order_ref = -1;
-	if ((pos_volume = HasSellPosition(sub_instrument_id())) > 0) {
+	if ((pos_volume = HasSellPosition(main_instrument_id())) > 0) {
 		bool has_signal = true;
 		for (auto it_func = close_signals_.begin(); it_func != close_signals_.end(); it_func++) {
 			if (it_func->first.first == Direction::Buy) {
@@ -53,7 +53,7 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Buy, pos_volume);
 		}
 	}
-	else if ((pos_volume = HasBuyPosition(sub_instrument_id())) > 0) {
+	else if ((pos_volume = HasBuyPosition(main_instrument_id())) > 0) {
 		bool has_signal = true;
 		for (auto it_func = close_signals_.begin(); it_func != close_signals_.end(); it_func++) {
 			if (it_func->first.first == Direction::Sell) {
@@ -64,7 +64,7 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, pos_volume);
 		}
 	}
-	else {
+	else if (is_enable_trade()) {
 		bool has_sell_signal = true;
 		for (auto it_func = open_signals_.begin(); it_func != open_signals_.end(); it_func++) {
 			if (it_func->first.first == Direction::Sell) {
@@ -89,6 +89,17 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 
 	if (order_ref > 0) {
 		pending_order_refs_.insert(order_ref);
+	}
+}
+
+void CStepStrategy::OnOrderCallback(const Order& order)
+{
+	if (order.status == Status_Error || order.status == Status_Canceled) {
+		int order_ref = order.GetKey().order_ref;
+		auto it = pending_order_refs_.find(order_ref);
+		if (it != pending_order_refs_.end()) {
+			pending_order_refs_.erase(order_ref);
+		}
 	}
 }
 
@@ -136,8 +147,12 @@ bool CStepStrategy::PushQuote(const Quote& quote)
 			if (it_quotes->second.size() >= MaxQuoteLimitSize) {
 				it_quotes->second.pop_front();
 			}
+			return true;
 		}
 	}
+
+	std::deque<Quote>& quotes = quotes_map_[quote.instrument_id];
+	quotes.push_back(quote);
 
 	return true;
 }
