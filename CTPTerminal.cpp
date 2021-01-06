@@ -74,7 +74,7 @@ int main()
 		Utils::Log("3: ReqQryTrade");
 		Utils::Log("4: ReqQryPosition");
 		Utils::Log("5: ReqQryMarginRate");
-		Utils::Log("6: StartTrade");
+		Utils::Log("6: StartStopTrade");
 		Utils::Log("7: ReqInsertMarketOrder(Open/Buy/1)");
 		Utils::Log("8: ReqInsertMarketOrder(Close/Sell/1)");
 
@@ -86,7 +86,7 @@ int main()
 			break;
 
 		case 2:
-			quote_service.trade_api()->ReqQryOrder();
+			//quote_service.trade_api()->ReqQryOrder();
 			break;
 
 		case 3:
@@ -102,7 +102,14 @@ int main()
 			break;
 
 		case 6:
-			strategy.set_enable_trade(true);
+			strategy.set_enable_trade(!strategy.is_enable_trade());
+			if (strategy.is_enable_trade()) {
+				Utils::Log("已开始运行策略");
+			}
+			else {
+				Utils::Log("已停止运行策略");
+			}
+			
 			break;
 
 		case 7:
