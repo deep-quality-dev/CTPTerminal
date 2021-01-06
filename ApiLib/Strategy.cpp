@@ -2,9 +2,15 @@
 #include "DataCenter.h"
 #include "TradeApi.h"
 #include "Strategy.h"
+#include "Utils/Utils.h"
 
 int IStrategy::InsertOrder(const std::string& instrument_id, OffsetFlag offset_flag, Direction direction, double price, int volume)
 {
+	__time64_t now_time = Utils::GetTimestamp();
+	if (now_time - last_order_time_ < order_interval_ * 1000) {
+		return -2;
+	}
+
 	OrderInsert order_insert;
 	order_insert.instrument_id = instrument_id;
 	order_insert.offset_flag = offset_flag;
@@ -15,6 +21,7 @@ int IStrategy::InsertOrder(const std::string& instrument_id, OffsetFlag offset_f
 
 	if (trade_api_) {
 		if (trade_api_->ReqInsertOrder(order_insert) >= 0) {
+			last_order_time_ = now_time;
 			return order_insert.order_ref;
 		}
 	}
@@ -23,6 +30,11 @@ int IStrategy::InsertOrder(const std::string& instrument_id, OffsetFlag offset_f
 
 int IStrategy::InsertMarketOrder(const std::string& instrument_id, OffsetFlag offset_flag, Direction direction, int volume)
 {
+	__time64_t now_time = Utils::GetTimestamp();
+	if (now_time - last_order_time_ < order_interval_ * 1000) {
+		return -2;
+	}
+
 	// NOTE: 上期所不支持市价报单
 
 	OrderInsert order_insert;
@@ -36,6 +48,7 @@ int IStrategy::InsertMarketOrder(const std::string& instrument_id, OffsetFlag of
 
 	if (trade_api_) {
 		if (trade_api_->ReqInsertOrder(order_insert) >= 0) {
+			last_order_time_ = now_time;
 			return order_insert.order_ref;
 		}
 	}

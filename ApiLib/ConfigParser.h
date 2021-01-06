@@ -48,6 +48,14 @@ public:
 		loss_limit_ = limit;
 	}
 
+	static int order_interval() {
+		return order_interval_;
+	}
+
+	static void set_order_interval(int interval) {
+		order_interval_ = interval;
+	}
+
 private:
 	static std::vector<MarketDataServerConfig> quote_server_configs_;
 	static TradeServerConfig trade_server_config_;
@@ -63,4 +71,7 @@ private:
 
 	// 资金管理, %
 	static double loss_limit_;
+
+	// 报单之间时间间隔, 单位为秒
+	static int order_interval_;
 };

@@ -21,13 +21,13 @@ TimeDuration TimeDuration::MakeTimeDuration(const std::string& product_id, int w
 	systime.wMinute = start_minute;
 	systime.wSecond = 0;
 
-	__time64_t start_time = Utils::CalcTimestampMilli(systime);
+	__time64_t start_time = Utils::SystemTime2Time64(systime);
 
 	systime.wHour = end_hour;
 	systime.wMinute = end_minute;
 	systime.wSecond = 0;
 
-	__time64_t end_time = Utils::CalcTimestampMilli(systime);
+	__time64_t end_time = Utils::SystemTime2Time64(systime);
 
 	return TimeDuration(product_id, start_time, end_time);
 }
@@ -233,7 +233,7 @@ Quote::Quote(const CThostFtdcDepthMarketDataField& field)
 	std::string strtime = trading_day.substr(0, 4) + "-" + trading_day.substr(4, 2) + "-" + trading_day.substr(6, 2)
 		+ " " + updatetime;
 
-	last_time = Utils::CalcTimestamp(strtime);
+	last_time = Utils::Str2Time64(strtime);
 	if (field.UpdateMillisec) {
 		last_time += field.UpdateMillisec;
 	}

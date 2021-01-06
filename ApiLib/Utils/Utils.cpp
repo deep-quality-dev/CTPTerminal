@@ -21,7 +21,7 @@ std::string Utils::GetCurrentDateTime()
 	return buf;
 }
 
-__time64_t Utils::CalcTimestamp(const std::string& timestr)
+__time64_t Utils::Str2Time64(const std::string& timestr)
 {
 	int year = 0, month = 0, day = 0;
 	int hour = 0, minute = 0, second = 0, milli = 0;
@@ -51,7 +51,7 @@ __time64_t Utils::CalcTimestamp(const std::string& timestr)
 	return time_stamp * 1000;
 }
 
-SYSTEMTIME Utils::GetSystemTime(__time64_t timestamp)
+SYSTEMTIME Utils::Time64ToSystemTime(__time64_t timestamp)
 {
 	__time64_t local = timestamp / 1000;
 	struct tm tm = { 0 };
@@ -69,7 +69,7 @@ SYSTEMTIME Utils::GetSystemTime(__time64_t timestamp)
 	return systime;
 }
 
-__time64_t Utils::CalcTimestampMilli(const SYSTEMTIME& systime)
+__time64_t Utils::SystemTime2Time64(const SYSTEMTIME& systime)
 {
 	struct tm tm;
 	__time64_t time_stamp;
@@ -88,9 +88,16 @@ __time64_t Utils::CalcTimestampMilli(const SYSTEMTIME& systime)
 	return time_stamp;
 }
 
+__time64_t Utils::GetTimestamp()
+{
+	SYSTEMTIME sysTime = { 0 };
+	GetLocalTime(&sysTime);
+	return SystemTime2Time64(sysTime);
+}
+
 std::string Utils::GetTimeString(__time64_t timestamp, int format /*= 1*/)
 {
-	SYSTEMTIME systime = GetSystemTime(timestamp);
+	SYSTEMTIME systime = Time64ToSystemTime(timestamp);
 	return GetTimeString(systime, format);
 }
 
@@ -112,7 +119,7 @@ std::string Utils::GetTimeString(SYSTEMTIME systime, int format /*= 1*/)
 
 SYSTEMTIME Utils::AddTime(const SYSTEMTIME& systime, int field, int num)
 {
-	__time64_t timestamp = CalcTimestampMilli(systime);
+	__time64_t timestamp = SystemTime2Time64(systime);
 	switch (field)
 	{
 	case 0: // add date
@@ -134,7 +141,7 @@ SYSTEMTIME Utils::AddTime(const SYSTEMTIME& systime, int field, int num)
 	default:
 		return systime;
 	}
-	return GetSystemTime(timestamp);
+	return Time64ToSystemTime(timestamp);
 }
 
 std::string Utils::GetTempPath(const std::string &filepath)

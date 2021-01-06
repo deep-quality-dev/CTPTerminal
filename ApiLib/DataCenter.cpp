@@ -38,7 +38,7 @@ Quote CDataCenter::OnRtnQuote(const Quote& squote)
 		quote.average_price = it_instrument->volume_multiple == 0 ? 0 : quote.average_price / it_instrument->volume_multiple;
 		// 郑商所的夜盘日期是当天。
 		// 其他交易所的夜盘日期是下一个交易日。
-		SYSTEMTIME systime = Utils::GetSystemTime(quote.last_time);
+		SYSTEMTIME systime = Utils::Time64ToSystemTime(quote.last_time);
 		if (systime.wHour >= 21) {
 			if (systime.wDayOfWeek == 1) { // monday
 				systime = Utils::AddTime(systime, 0, -3);
@@ -47,7 +47,7 @@ Quote CDataCenter::OnRtnQuote(const Quote& squote)
 				systime = Utils::AddTime(systime, 0, -1);
 			}
 		}
-		quote.last_time = Utils::CalcTimestampMilli(systime);
+		quote.last_time = Utils::SystemTime2Time64(systime);
 
 		if (quote.average_price <= 1e-4) {
 			quote.average_price = quote.last_price;
@@ -240,7 +240,7 @@ void CDataCenter::SaveQuote(const Quote& quote)
 
 	// 4点之前的行情都放在一起
 	__time64_t time = quote.last_time;
-	SYSTEMTIME systime = Utils::GetSystemTime(time);
+	SYSTEMTIME systime = Utils::Time64ToSystemTime(time);
 	if (systime.wHour < 4) {
 		systime = Utils::AddTime(systime, 0, -1);
 	}

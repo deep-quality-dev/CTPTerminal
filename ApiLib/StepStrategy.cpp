@@ -52,6 +52,9 @@ void CStepStrategy::CheckForceSettle()
 			order_count_++;
 			pending_order_refs_.insert(order_ref);
 		}
+		else if (order_ref == -2) { // 高频繁报单
+			Utils::Log("不支持高频繁报单，稍后再报");
+		}
 		set_enable_trade(false);
 	}
 
@@ -124,6 +127,9 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 	if (order_ref > 0) {
 		order_count_++;
 		pending_order_refs_.insert(order_ref);
+	}
+	else if (order_ref == -2) { // 高频繁报单
+		Utils::Log("不支持高频繁报单，稍后再报");
 	}
 }
 

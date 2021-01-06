@@ -13,6 +13,7 @@ int CConfigParser::ma_period_ = 0;
 int CConfigParser::volume_ = 1;
 int CConfigParser::order_limit_ = 1;
 double CConfigParser::loss_limit_ = 5;
+int CConfigParser::order_interval_ = 5;
 
 void CConfigParser::LoadServerConfig(const char* config_path)
 {
@@ -84,4 +85,7 @@ void CConfigParser::LoadServerConfig(const char* config_path)
 
 	std::string loss_limit = ini_manager.get_value("Param", "loss_limit");
 	loss_limit_ = std::atof(loss_limit.c_str());
+
+	std::string order_interval = ini_manager.get_value("Param", "order_interval");
+	order_interval_ = std::atoi(order_interval.c_str());
 }

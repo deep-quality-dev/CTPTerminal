@@ -45,20 +45,6 @@ public:
 		ma_period_ = period;
 	}
 
-	int order_limit() {
-		return order_limit_;
-	}
-	void set_order_limit(int limit) {
-		order_limit_ = limit;
-	}
-
-	double loss_limit() {
-		return loss_limit_;
-	}
-	void set_loss_limit(double limit) {
-		loss_limit_ = limit;
-	}
-
 	virtual void Initialize() override;
 
 	virtual void CheckForceSettle() override;

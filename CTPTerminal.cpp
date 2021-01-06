@@ -59,6 +59,7 @@ int main()
 	strategy.set_volume(CConfigParser::volume());
 	strategy.set_order_limit(CConfigParser::order_limit());
 	strategy.set_loss_limit(CConfigParser::loss_limit());
+	strategy.set_order_interval(CConfigParser::order_interval());
 
 	data_center.SetQuoteCallback(std::bind(&CStepStrategy::OnQuoteCallback, &strategy, std::placeholders::_1));
 	data_center.SetOnOrderCallback(std::bind(&CStepStrategy::OnOrderCallback, &strategy, std::placeholders::_1));
