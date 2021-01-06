@@ -5,7 +5,7 @@ class IStrategy
 public:
 	IStrategy(CDataCenter* data_center, ITradeApi* trade_api) : 
 		trade_api_(trade_api), data_center_(data_center), 
-		order_ref_(0), order_count_(0), order_limit_(1),
+		order_ref_(0), order_count_(0), order_limit_(1), loss_limit_(5),
 		is_enable_trade_(false) {}
 
 	CDataCenter* data_center() {
@@ -49,6 +49,8 @@ protected:
 
 	int order_count_; // 当前的报单次数
 	int order_limit_; // 当日报单限制次数
+
+	double loss_limit_;
 
 	bool is_enable_trade_;
 };

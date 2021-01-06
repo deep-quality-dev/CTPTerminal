@@ -40,6 +40,14 @@ public:
 		order_limit_ = limit;
 	}
 
+	static double loss_limit() {
+		return loss_limit_;
+	}
+
+	static void set_loss_limit(double limit) {
+		loss_limit_ = limit;
+	}
+
 private:
 	static std::vector<MarketDataServerConfig> quote_server_configs_;
 	static TradeServerConfig trade_server_config_;
@@ -50,5 +58,9 @@ private:
 	static int ma_period_;
 	static int volume_;
 
+	// 当天报单次数限制
 	static int order_limit_;
+
+	// 资金管理, %
+	static double loss_limit_;
 };

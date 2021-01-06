@@ -9,8 +9,10 @@ TradeServerConfig CConfigParser::trade_server_config_;
 
 std::string CConfigParser::main_instrument_id_;
 std::string CConfigParser::sub_instrument_id_;
-int CConfigParser::ma_period_;
-int CConfigParser::volume_;
+int CConfigParser::ma_period_ = 0;
+int CConfigParser::volume_ = 1;
+int CConfigParser::order_limit_ = 1;
+double CConfigParser::loss_limit_ = 5;
 
 void CConfigParser::LoadServerConfig(const char* config_path)
 {
@@ -79,4 +81,7 @@ void CConfigParser::LoadServerConfig(const char* config_path)
 	// Configuration for 风控
 	std::string order_limit = ini_manager.get_value("Param", "order_limit");
 	order_limit_ = std::atoi(order_limit.c_str());
+
+	std::string loss_limit = ini_manager.get_value("Param", "loss_limit");
+	loss_limit_ = std::atof(loss_limit.c_str());
 }

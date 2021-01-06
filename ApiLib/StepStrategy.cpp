@@ -36,8 +36,10 @@ void CStepStrategy::CheckForceSettle()
 	// 如果平仓盈亏达到70%以上的资金，立即强制并停止运行
 	double profit = account_.close_profit + account_.position_profit;
 
-	if (profit < 0 && account_.available * 0.25 <= abs(profit)) {
-		Utils::Log("持仓亏损已经达到可用资金的25%以上，立即强平");
+	if (profit < 0 && account_.available * loss_limit_ / 100.0 <= abs(profit)) {
+		std::stringstream ss;
+		ss << "持仓亏损已经达到可用资金的" << loss_limit_ << "%以上，立即强平";
+		Utils::Log(ss.str());
 
 		int pos_volume = 0, order_ref = -1;
 		if ((pos_volume = HasSellPosition(main_instrument_id())) > 0) {

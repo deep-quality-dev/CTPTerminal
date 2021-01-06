@@ -57,6 +57,8 @@ int main()
 	strategy.set_sub_instrument_id(CConfigParser::sub_instrument_id());
 	strategy.set_ma_period(CConfigParser::ma_period());
 	strategy.set_volume(CConfigParser::volume());
+	strategy.set_order_limit(CConfigParser::order_limit());
+	strategy.set_loss_limit(CConfigParser::loss_limit());
 
 	data_center.SetQuoteCallback(std::bind(&CStepStrategy::OnQuoteCallback, &strategy, std::placeholders::_1));
 	data_center.SetOnOrderCallback(std::bind(&CStepStrategy::OnOrderCallback, &strategy, std::placeholders::_1));
@@ -113,11 +115,11 @@ int main()
 			break;
 
 		case 7:
-			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Open, Direction::Buy, 1);
+			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Open, Direction::Buy, CConfigParser::volume());
 			break;
 
 		case 8:
-			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Close, Direction::Sell, 1);
+			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Close, Direction::Sell, CConfigParser::volume());
 			break;
 
 		case 0:
