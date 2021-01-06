@@ -119,7 +119,7 @@ int main()
 			break;
 
 		case 8:
-			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Close, Direction::Sell, CConfigParser::volume());
+			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, CConfigParser::volume());
 			break;
 
 		case 0:
