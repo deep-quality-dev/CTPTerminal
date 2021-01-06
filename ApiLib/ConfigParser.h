@@ -32,6 +32,14 @@ public:
 		return volume_;
 	}
 
+	static int order_limit() {
+		return order_limit_;
+	}
+
+	static void set_order_limit(int limit) {
+		order_limit_ = limit;
+	}
+
 private:
 	static std::vector<MarketDataServerConfig> quote_server_configs_;
 	static TradeServerConfig trade_server_config_;
@@ -41,4 +49,6 @@ private:
 	
 	static int ma_period_;
 	static int volume_;
+
+	static int order_limit_;
 };

@@ -75,4 +75,8 @@ void CConfigParser::LoadServerConfig(const char* config_path)
 
 	ma_period_ = std::atoi(ma_period.c_str());
 	volume_ = std::atoi(volume.c_str());
+
+	// Configuration for 风控
+	std::string order_limit = ini_manager.get_value("Param", "order_limit");
+	order_limit_ = std::atoi(order_limit.c_str());
 }

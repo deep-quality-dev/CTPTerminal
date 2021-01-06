@@ -37,7 +37,7 @@ void CStepStrategy::CheckForceSettle()
 	double profit = account_.close_profit + account_.position_profit;
 
 	if (profit < 0 && account_.available * 0.25 <= abs(profit)) {
-		Utils::Log("分控强平");
+		Utils::Log("持仓亏损已经达到可用资金的25%以上，立即强平");
 
 		int pos_volume = 0, order_ref = -1;
 		if ((pos_volume = HasSellPosition(main_instrument_id())) > 0) {
@@ -47,7 +47,15 @@ void CStepStrategy::CheckForceSettle()
 			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, pos_volume);
 		}
 		if (order_ref > 0) {
+			order_count_++;
 			pending_order_refs_.insert(order_ref);
+		}
+		set_enable_trade(false);
+	}
+
+	if (order_count_ >= order_limit_) {
+		if (is_enable_trade()) {
+			Utils::Log("已经超过当天有效报单次数，不能再报单");
 		}
 		set_enable_trade(false);
 	}
@@ -112,6 +120,7 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 	}
 
 	if (order_ref > 0) {
+		order_count_++;
 		pending_order_refs_.insert(order_ref);
 	}
 }
