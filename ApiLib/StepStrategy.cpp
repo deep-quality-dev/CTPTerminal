@@ -36,7 +36,9 @@ void CStepStrategy::CheckForceSettle()
 	// 如果平仓盈亏达到70%以上的资金，立即强制并停止运行
 	double profit = account_.close_profit + account_.position_profit;
 
-	if (profit < 0 && account_.available * 0.75 <= abs(profit)) {
+	if (profit < 0 && account_.available * 0.25 <= abs(profit)) {
+		Utils::Log("分控强平");
+
 		int pos_volume = 0, order_ref = -1;
 		if ((pos_volume = HasSellPosition(main_instrument_id())) > 0) {
 			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Buy, pos_volume);
