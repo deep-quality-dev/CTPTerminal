@@ -285,6 +285,7 @@ double CDataCenter::GetMarketPrice(const std::string& instrument_id, Direction d
 		(it_quote->second[0] || it_quote->second[1])) {
 		Quote* quote = it_quote->second[1] ? it_quote->second[1] : it_quote->second[0];
 		return direction == Sell ? quote->lower_limit_price : quote->upper_limit_price;
+		// return direction == Sell ? quote->bid_price1 : quote->ask_price1;
 	}
 	return 0;
 }
