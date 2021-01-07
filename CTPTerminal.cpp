@@ -119,7 +119,7 @@ int main()
 		case 7:
 		{
 			if (order_count >= CConfigParser::order_limit()) {
-				Utils::Log("已经超过当天有效报单次数，不能再报单");
+				Utils::Log("已经超过当天有效报单次数，不能再报单", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
 				break;
 			}
 
@@ -128,24 +128,19 @@ int main()
 				order_count++;
 			}
 			else if (order_ref == -2) { // 高频繁报单
-				Utils::Log("不支持高频繁报单，稍后再报");
+				Utils::Log("不支持高频繁报单，稍后再报", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
 			}
 			break;
 		}
 
 		case 8:
 		{
-			if (order_count >= CConfigParser::order_limit()) {
-				Utils::Log("已经超过当天有效报单次数，不能再报单");
-				break;
-			}
-
 			int order_ref = strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, CConfigParser::volume());
 			if (order_ref > 0) {
 				order_count++;
 			}
 			else if (order_ref == -2) { // 高频繁报单
-				Utils::Log("不支持高频繁报单，稍后再报");
+				Utils::Log("不支持高频繁报单，稍后再报", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
 			}
 			break;
 		}

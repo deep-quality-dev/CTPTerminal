@@ -53,14 +53,7 @@ void CStepStrategy::CheckForceSettle()
 			pending_order_refs_.insert(order_ref);
 		}
 		else if (order_ref == -2) { // 高频繁报单
-			Utils::Log("不支持高频繁报单，稍后再报");
-		}
-		set_enable_trade(false);
-	}
-
-	if (order_count_ >= order_limit_) {
-		if (is_enable_trade()) {
-			Utils::Log("已经超过当天有效报单次数，不能再报单");
+			Utils::Log("不支持高频繁报单，稍后再报", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
 		}
 		set_enable_trade(false);
 	}
@@ -101,26 +94,39 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, pos_volume);
 		}
 	}
-	else if (is_enable_trade()) {
-		bool has_sell_signal = true;
-		for (auto it_func = open_signals_.begin(); it_func != open_signals_.end(); it_func++) {
-			if (it_func->first.first == Direction::Sell) {
-				has_sell_signal &= it_func->second();
+	else {
+		if (is_enable_trade()) {
+			bool has_sell_signal = true;
+			for (auto it_func = open_signals_.begin(); it_func != open_signals_.end(); it_func++) {
+				if (it_func->first.first == Direction::Sell) {
+					has_sell_signal &= it_func->second();
+				}
 			}
-		}
 
-		bool has_buy_signal = true;
-		for (auto it_func = open_signals_.begin(); it_func != open_signals_.end(); it_func++) {
-			if (it_func->first.first == Direction::Buy) {
-				has_buy_signal &= it_func->second();
+			bool has_buy_signal = true;
+			for (auto it_func = open_signals_.begin(); it_func != open_signals_.end(); it_func++) {
+				if (it_func->first.first == Direction::Buy) {
+					has_buy_signal &= it_func->second();
+				}
 			}
-		}
 
-		if (has_sell_signal) {
-			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::Open, Direction::Sell, volume());
-		}
-		else if (has_buy_signal) {
-			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::Open, Direction::Buy, volume());
+			if (has_sell_signal || has_buy_signal) {
+				if (order_count_ >= order_limit_) {
+					if (is_enable_trade()) {
+						Utils::Log("已经超过当天有效报单次数，不能再报单", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
+					}
+					set_enable_trade(false);
+					has_sell_signal = false; // 停止报单
+					has_buy_signal = false;
+				}
+			}
+
+			if (has_sell_signal) {
+				order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::Open, Direction::Sell, volume());
+			}
+			else if (has_buy_signal) {
+				order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::Open, Direction::Buy, volume());
+			}
 		}
 	}
 
@@ -129,7 +135,7 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 		pending_order_refs_.insert(order_ref);
 	}
 	else if (order_ref == -2) { // 高频繁报单
-		Utils::Log("不支持高频繁报单，稍后再报");
+		Utils::Log("不支持高频繁报单，稍后再报", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
 	}
 }
 
