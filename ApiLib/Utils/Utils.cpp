@@ -21,14 +21,31 @@ std::string Utils::GetCurrentDateTime()
 	return buf;
 }
 
-__time64_t Utils::Str2Time64(const std::string& timestr)
+__time64_t Utils::Str2Time64(const std::string& timestr, int format/* = 0*/)
 {
 	int year = 0, month = 0, day = 0;
 	int hour = 0, minute = 0, second = 0, milli = 0;
 
-	if (sscanf_s(timestr.c_str(), "%d-%d-%d %d:%d:%d",
-		&year, &month, &day, &hour, &minute, &second) < 3)
+	switch (format) {
+	case 0:
+		if (sscanf_s(timestr.c_str(), "%d-%d-%d %d:%d:%d",
+			&year, &month, &day, &hour, &minute, &second) < 3)
+			return 0;
+		break;
+
+	case 1:
+		hour = 0;
+		minute = 0;
+		second = 0;
+		if (sscanf_s(timestr.c_str(), "%d-%d-%d",
+			&year, &month, &day) < 3)
+			return 0;
+		break;
+		
+	default:
 		return 0;
+	}
+	
 
 	year -= 1900;
 

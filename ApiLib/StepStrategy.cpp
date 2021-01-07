@@ -217,6 +217,10 @@ bool CStepStrategy::MASellCross(const std::string& main_instrument_id, const std
 
 	double sum = 0;
 	size_t size = main_quotes->size();
+	if (size < ma_period + 1) {
+		return false;
+	}
+
 	for (size_t idx = size - 1; idx >= 0 && ma_period > 0; idx--, ma_period--) {
 		Quote main_quote = (*main_quotes)[idx];
 		sum += main_quote.bid_price1;
@@ -252,6 +256,10 @@ bool CStepStrategy::MABuyCross(const std::string& main_instrument_id, const std:
 
 	double sum = 0;
 	size_t size = main_quotes->size();
+	if (size < ma_period + 1) {
+		return false;
+	}
+
 	for (size_t idx = size - 1; idx >= 0 && ma_period > 0; idx--, ma_period--) {
 		Quote main_quote = (*main_quotes)[idx];
 

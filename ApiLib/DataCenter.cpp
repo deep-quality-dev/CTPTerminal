@@ -97,9 +97,16 @@ void CDataCenter::OnRspTradeAccount(const TradingAccount& account)
 	}
 }
 
-void CDataCenter::OnRtnPositions(const std::set<Position>& positions)
+std::set<Position> CDataCenter::OnRtnPositions(const std::set<Position>& positions)
 {
-	positions_ = positions;
+	{
+		std::unique_lock<std::mutex> lk(mutex_positions_);
+		positions_ = positions;
+	}
+
+	CalcPositionProfit();
+
+	return positions_;
 }
 
 std::set<PositionDetail> CDataCenter::OnRtnPositionDetails(const std::set<PositionDetail>& positions)

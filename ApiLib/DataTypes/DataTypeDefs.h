@@ -324,6 +324,7 @@ struct Position
 	double			profit; // 持仓盈亏
 
 	Position(const CThostFtdcInvestorPositionField& field);
+	Position(const CThostFtdcInvestorPositionDetailField& field);
 	Position(const std::string& instrument_id, Direction direction);
 	int volume() const { return today_volume + yesterday_volume; }
 	bool operator < (const Position& position) const;

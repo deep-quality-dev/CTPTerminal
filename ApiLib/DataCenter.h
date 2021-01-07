@@ -58,7 +58,7 @@ public:
 	virtual Quote OnRtnQuote(const Quote& quote);
 	virtual void OnRspInstrumentMarginRate(const InstrumentMarginRate& margin_rate);
 	virtual void OnRspTradeAccount(const TradingAccount& account);
-	virtual void OnRtnPositions(const std::set<Position>& positions);
+	virtual std::set<Position> OnRtnPositions(const std::set<Position>& positions);
 	virtual std::set<PositionDetail> OnRtnPositionDetails(const std::set<PositionDetail>& positions);
 	virtual void OnRspQryOrders(const std::set<Order>& orders);
 	virtual void OnRspQryTrades(const std::set<Trade>& orders);

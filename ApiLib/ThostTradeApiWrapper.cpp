@@ -399,6 +399,7 @@ int CThostTradeApiWrapper::ReqQryPosition()
 int CThostTradeApiWrapper::ReqQryPositionDetail()
 {
 	position_details_cache_.clear();
+	positions_cache_.clear();
 	CThostFtdcQryInvestorPositionDetailField field;
 	memset(&field, 0, sizeof(CThostFtdcQryInvestorPositionDetailField));
 	Utils::safe_strcpy(field.InvestorID, user_id(), sizeof(TThostFtdcInvestorIDType));
@@ -581,7 +582,7 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryAllInstrument, this), "查询合约");
 // 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryOrder, this), "查询委托");
 // 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryTrade, this), "查询成交");
-			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPosition, this), "查询持仓");
+//			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPosition, this), "查询持仓");
 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPositionDetail, this), "查询持仓明细");
 		}
 
@@ -972,17 +973,40 @@ void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg
 		return;
 	}
 	if (f) {
-		PositionDetail position(*f);
-		if (position.volume > 0)
-			position_details_cache_.insert(position);
+		PositionDetail position_detail(*f);
+		if (position_detail.volume > 0)
+			position_details_cache_.insert(position_detail);
+
+
+		Position position(*f);
+		if (position.volume()) {
+			auto it_position = std::find_if(positions_cache_.begin(), positions_cache_.end(),
+				[&position](const Position& pp) {
+				return pp.instrument_id == position.instrument_id && pp.direction == position.direction;
+			});
+			if (it_position == positions_cache_.end()) {
+				positions_cache_.insert(position);
+			}
+			else {
+				position.position_cost =
+					(it_position->position_cost * it_position->volume() +
+						position.position_cost * position.volume()) / (it_position->volume() + position.volume());
+				position.today_volume += it_position->today_volume;
+				position.yesterday_volume += it_position->yesterday_volume;
+				positions_cache_.erase(position);
+				positions_cache_.insert(position);
+			}
+		}
 	}
 
 	if (msg->is_last()) {
 		if (data_center_) {
+			positions_cache_ = data_center_->OnRtnPositions(positions_cache_);
 			position_details_cache_ = data_center_->OnRtnPositionDetails(position_details_cache_);
 		}
 
 		if (gui_action_) {
+			gui_action_->RefreshPositions(positions_cache_);
 			gui_action_->RefreshPositionDetails(position_details_cache_);
 		}
 
@@ -990,6 +1014,7 @@ void CThostTradeApiWrapper::OnRspQryInvestorPositionDetail(CThostSpiMessage* msg
 			gui_action_->OnLoginProcess(ApiEvent_QryPositionDetailSuccess, "查询持仓明细成功");
 		}
 		position_details_cache_.clear();
+		positions_cache_.clear();
 	}
 }
 

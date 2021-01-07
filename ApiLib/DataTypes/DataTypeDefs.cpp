@@ -436,6 +436,29 @@ Position::Position(const CThostFtdcInvestorPositionField& field)
 	profit = field.PositionProfit;
 }
 
+Position::Position(const CThostFtdcInvestorPositionDetailField& field)
+{
+	SetFromFtdcExchangeID(exchange_id, field.ExchangeID);
+	instrument_id = field.InstrumentID;
+	SetFromFtdcDirection(direction, field.Direction);
+	position_cost = field.OpenPrice;
+	profit = field.PositionProfitByTrade;
+
+	std::string date_str = field.OpenDate;
+	__time64_t open_date = Utils::Str2Time64(date_str.substr(0, 4) + "-" + date_str.substr(4, 2) + "-" + date_str.substr(6, 2), 1);
+	date_str = field.TradingDay;
+	__time64_t trading_day = Utils::Str2Time64(date_str.substr(0, 4) + "-" + date_str.substr(4, 2) + "-" + date_str.substr(6, 2), 1);
+
+	yesterday_volume = today_volume = 0;
+	if (open_date < trading_day) {
+		yesterday_volume = field.Volume;
+	}
+	else {
+		today_volume = field.Volume;
+	}
+	commission = 0; // TODO
+}
+
 Position::Position(const std::string& instrument_id, Direction direction)
 {
 	this->instrument_id = instrument_id;

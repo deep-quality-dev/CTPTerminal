@@ -71,6 +71,7 @@ int main()
 	subscribe_products.insert("au"); // 黄金
 	quote_service.SetSubscribeProducts(subscribe_products);
 
+	int order_count = 0;
 	while (true) {
 		Utils::Log("1: ReqQryTradingAccount");
 		Utils::Log("2: ReqQryOrder");
@@ -97,7 +98,7 @@ int main()
 			break;
 
 		case 4:
-			quote_service.trade_api()->ReqQryPosition();
+			quote_service.trade_api()->ReqQryPositionDetail();
 			break;
 
 		case 5:
@@ -116,12 +117,38 @@ int main()
 			break;
 
 		case 7:
-			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Open, Direction::Buy, CConfigParser::volume());
+		{
+			if (order_count >= CConfigParser::order_limit()) {
+				Utils::Log("已经超过当天有效报单次数，不能再报单");
+				break;
+			}
+
+			int order_ref = strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::Open, Direction::Buy, CConfigParser::volume());
+			if (order_ref > 0) {
+				order_count++;
+			}
+			else if (order_ref == -2) { // 高频繁报单
+				Utils::Log("不支持高频繁报单，稍后再报");
+			}
 			break;
+		}
 
 		case 8:
-			strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, CConfigParser::volume());
+		{
+			if (order_count >= CConfigParser::order_limit()) {
+				Utils::Log("已经超过当天有效报单次数，不能再报单");
+				break;
+			}
+
+			int order_ref = strategy.InsertMarketOrder(CConfigParser::main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, CConfigParser::volume());
+			if (order_ref > 0) {
+				order_count++;
+			}
+			else if (order_ref == -2) { // 高频繁报单
+				Utils::Log("不支持高频繁报单，稍后再报");
+			}
 			break;
+		}
 
 		case 0:
 			break;

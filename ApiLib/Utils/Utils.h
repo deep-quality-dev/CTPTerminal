@@ -11,7 +11,12 @@ namespace Utils {
 	/************************************************************************/
 	std::string GetCurrentDate();
 	std::string GetCurrentDateTime();
-	__time64_t Str2Time64(const std::string& timestr);
+	/*
+	 * @param format
+	 *     0: yyyy-MM-dd HH:mm:ss
+	 *     1: yyyy-MM-dd
+	 */
+	__time64_t Str2Time64(const std::string& timestr, int format = 0);
 	SYSTEMTIME Time64ToSystemTime(__time64_t timestamp);
 	__time64_t SystemTime2Time64(const SYSTEMTIME& systime);
 	__time64_t GetTimestamp();
