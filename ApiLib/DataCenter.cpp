@@ -10,6 +10,8 @@
 CDataCenter::CDataCenter() : gui_action_(NULL)
 {
 	order_ref_ = 0;
+
+	Utils::CreateDirectory(Utils::GetRelativePath("quote").c_str());
 }
 
 
@@ -78,8 +80,8 @@ Quote CDataCenter::OnRtnQuote(const Quote& squote)
 		quote_callback_(quote);
 	}
 
-// 	// Write Quote
-// 	SaveQuote(quote);
+	// Write Quote
+	SaveQuote(quote);
 
 	return quote;
 }

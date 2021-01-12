@@ -179,6 +179,11 @@ std::string Utils::GetRelativePath(const char* path)
 	return std::string(szFull) + path;
 }
 
+void Utils::CreateDirectory(const char* path)
+{
+	::CreateDirectoryA(path, NULL);
+}
+
 int Utils::CompareDouble(double val1, double val2, int precision /*= 6*/)
 {
 	double dPrecision = (double)1 / (double)pow(10.0, precision);

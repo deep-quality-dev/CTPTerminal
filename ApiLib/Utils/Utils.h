@@ -38,6 +38,7 @@ namespace Utils {
 
 	std::string GetTempPath(const std::string& filepath);
 	std::string GetRelativePath(const char* path);
+	void CreateDirectory(const char* path);
 
 	int CompareDouble(double val1, double val2, int precision = 6);
 

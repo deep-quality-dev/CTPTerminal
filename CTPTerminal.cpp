@@ -11,7 +11,7 @@
 #include <sstream>
 #include <iostream>
 
-// #define ONLY_QUOTE
+#define ONLY_QUOTE
 
 int main()
 {
@@ -48,6 +48,8 @@ int main()
 	subscribe_products.insert("j"); // ½¹Ì¿
 	subscribe_products.insert("jm"); // ½¹Ãº
 	subscribe_products.insert("v"); // PVC
+
+	quote_service.SetSubscribeProducts(subscribe_products);
 
 #else
 	CStepStrategy strategy(&data_center, quote_service.trade_api());
