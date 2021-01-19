@@ -41,7 +41,10 @@ Quote CDataCenter::OnRtnQuote(const Quote& squote)
 		// 郑商所的夜盘日期是当天。
 		// 其他交易所的夜盘日期是下一个交易日。
 		SYSTEMTIME systime = Utils::Time64ToSystemTime(quote.last_time);
-		if (systime.wHour >= 21) {
+		if (systime.wHour < 4 && systime.wDayOfWeek == 1) { // at daybreak on monday
+			systime = Utils::AddTime(systime, 0, -2);
+		}
+		else if (systime.wHour >= 21) {
 			if (systime.wDayOfWeek == 1) { // monday
 				systime = Utils::AddTime(systime, 0, -3);
 			}
