@@ -277,7 +277,8 @@ void CDataCenter::SaveQuote(const Quote& quote)
 		<< quote.pre_settlement_price << ","
 		<< quote.average_price << ","
 		<< quote.trade_volume << ","
-		<< quote.position_volume << std::endl;
+		<< quote.position_volume << ","
+		<< Utils::GetCurrentDateTime() << std::endl;
 
 	Utils::SaveFile(Utils::GetRelativePath(ss.str().c_str()), line.str().c_str());
 }
