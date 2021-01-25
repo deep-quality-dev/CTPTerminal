@@ -31,6 +31,7 @@ public:
 	int init_order_ref() {
 		return init_order_ref_;
 	}
+	
 	void set_init_order_ref(int order_ref) {
 		init_order_ref_ = order_ref;
 	}
@@ -57,7 +58,8 @@ public:
 	}
 
 	Instrument GetInstrument(const std::string& instrument_id);
-	double GetMarketPrice(const std::string& instrument_id, Direction direction);
+	// offset: 以最小变动价位为单位
+	double GetMarketPrice(const std::string& instrument_id, Direction direction, int offset = 0);
 
 	virtual void OnRtnInstruments(const std::set<Instrument>& instruments);
 	virtual Quote OnRtnQuote(const Quote& quote);

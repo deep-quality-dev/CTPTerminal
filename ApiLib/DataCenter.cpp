@@ -299,15 +299,14 @@ Instrument CDataCenter::GetInstrument(const std::string& instrument_id)
 	return Instrument(instrument_id);
 }
 
-double CDataCenter::GetMarketPrice(const std::string& instrument_id, Direction direction)
+double CDataCenter::GetMarketPrice(const std::string& instrument_id, Direction direction, int offset/* = 0*/)
 {
 	auto it_quote = quotes_.find(instrument_id);
-	if (instruments_.find(instrument_id) != instruments_.end() &&
-		it_quote != quotes_.end() &&
-		(it_quote->second[0] || it_quote->second[1])) {
+	auto instrument = instruments_.find(instrument_id);
+	if (instrument != instruments_.end() && it_quote != quotes_.end() && (it_quote->second[0] || it_quote->second[1])) {
 		Quote* quote = it_quote->second[1] ? it_quote->second[1] : it_quote->second[0];
 		// return direction == Sell ? quote->lower_limit_price : quote->upper_limit_price;
-		return direction == Sell ? quote->bid_price1 : quote->ask_price1;
+		return direction == Sell ? quote->bid_price1 - offset * instrument->price_tick : quote->ask_price1 + offset * instrument->price_tick;
 	}
 	return 0;
 }

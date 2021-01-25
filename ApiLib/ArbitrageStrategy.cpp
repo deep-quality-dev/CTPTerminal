@@ -36,6 +36,7 @@ void CArbitrageStrategy::OnQuoteCallback(const Quote& quote)
 		return;
 	}
 
+	int order_ref = -1;
 	int pos_volume = 0;
 	if ((pos_volume = HasSellPosition(main_instrument_id())) > 0) {
 		bool has_signal = true;
@@ -45,7 +46,7 @@ void CArbitrageStrategy::OnQuoteCallback(const Quote& quote)
 			}
 		}
 		if (has_signal) {
-			InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Buy, pos_volume);
+			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Buy, pos_volume);
 		}
 	}
 	else if ((pos_volume = HasBuyPosition(main_instrument_id())) > 0) {
@@ -56,7 +57,7 @@ void CArbitrageStrategy::OnQuoteCallback(const Quote& quote)
 			}
 		}
 		if (has_signal) {
-			InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, pos_volume);
+			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::CloseToday, Direction::Sell, pos_volume);
 		}
 	}
 	else {
@@ -67,19 +68,23 @@ void CArbitrageStrategy::OnQuoteCallback(const Quote& quote)
 			}
 		}
 		if (has_sell_signal) {
-			InsertMarketOrder(main_instrument_id(), OffsetFlag::Open, Direction::Sell, volume());
-			return;
+			order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::Open, Direction::Sell, volume());
 		}
-		bool has_buy_signal = true;
-		for (auto it_func = open_signals_.begin(); it_func != open_signals_.end(); it_func++) {
-			if (it_func->first.first == Direction::Buy) {
-				has_buy_signal &= it_func->second();
+		else {
+			bool has_buy_signal = true;
+			for (auto it_func = open_signals_.begin(); it_func != open_signals_.end(); it_func++) {
+				if (it_func->first.first == Direction::Buy) {
+					has_buy_signal &= it_func->second();
+				}
+			}
+			if (has_buy_signal) {
+				order_ref = InsertMarketOrder(main_instrument_id(), OffsetFlag::Open, Direction::Buy, volume());
 			}
 		}
-		if (has_buy_signal) {
-			InsertMarketOrder(main_instrument_id(), OffsetFlag::Open, Direction::Buy, volume());
-			return;
-		}
+	}
+
+	if (order_ref > 0) {
+		RollbackOrderKey(order_ref);
 	}
 }
 

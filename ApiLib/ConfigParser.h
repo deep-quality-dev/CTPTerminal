@@ -56,6 +56,10 @@ public:
 		order_interval_ = interval;
 	}
 
+	static int price_offset() {
+		return price_offset_;
+	}
+
 private:
 	static std::vector<MarketDataServerConfig> quote_server_configs_;
 	static TradeServerConfig trade_server_config_;
@@ -74,4 +78,6 @@ private:
 
 	// 报单之间时间间隔, 单位为秒
 	static int order_interval_;
+
+	static int price_offset_;
 };

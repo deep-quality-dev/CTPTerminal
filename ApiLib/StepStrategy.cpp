@@ -51,6 +51,8 @@ void CStepStrategy::CheckForceSettle()
 		if (order_ref > 0) {
 			order_count_++;
 			pending_order_refs_.insert(order_ref);
+
+			RollbackOrderKey(order_ref);
 		}
 		else if (order_ref == -2) { // 高频繁报单
 			Utils::Log("不支持高频繁报单，稍后再报", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
@@ -135,6 +137,8 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 	if (order_ref > 0) {
 		order_count_++;
 		pending_order_refs_.insert(order_ref);
+
+		RollbackOrderKey(order_ref);
 	}
 	else if (order_ref == -2) { // 高频繁报单
 		Utils::Log("不支持高频繁报单，稍后再报", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);

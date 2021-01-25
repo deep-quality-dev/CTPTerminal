@@ -14,6 +14,7 @@ int CConfigParser::volume_ = 1;
 int CConfigParser::order_limit_ = 1;
 double CConfigParser::loss_limit_ = 5;
 int CConfigParser::order_interval_ = 5;
+int CConfigParser::price_offset_ = 0;
 
 void CConfigParser::LoadServerConfig(const char* config_path)
 {
@@ -88,4 +89,7 @@ void CConfigParser::LoadServerConfig(const char* config_path)
 
 	std::string order_interval = ini_manager.get_value("Param", "order_interval");
 	order_interval_ = std::atoi(order_interval.c_str());
+
+	std::string price_offset = ini_manager.get_value("Strategy", "price_offset");
+	price_offset_ = std::atoi(price_offset.c_str());
 }

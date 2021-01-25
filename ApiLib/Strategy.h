@@ -57,6 +57,10 @@ public:
 		order_interval_ = interval;
 	}
 
+	void set_price_offset(int offset) {
+		price_offset_ = offset;
+	}
+
 	std::map<int, Order> alive_orders() {
 		return alive_orders_;
 	}
@@ -64,6 +68,8 @@ public:
 	virtual void Initialize() = 0;
 
 	virtual void CheckForceSettle() = 0;
+
+	virtual void RollbackOrderKey(int order_ref) = 0;
 
 	virtual void OnQuoteCallback(const Quote& quote);
 	virtual void OnOrderCallback(const Order& order);
@@ -98,6 +104,8 @@ protected:
 
 	double loss_limit_;
 
+	int price_offset_;
+
 	int order_interval_; // 报单之间的时间间隔，单位为秒
 	__time64_t last_order_time_; // 最后报单时间
 
@@ -106,6 +114,9 @@ protected:
 	std::map<int, Order> alive_orders_;
 	std::map<int, int> timer_id2order_ref_;
 	std::map<int, int> order_ref2timer_id_;
+
+	// pair<order_ref, strategy_key>
+	std::map<int, std::string> order_ref2key_;
 
 	std::mutex mutex_alive_orders_;
 };

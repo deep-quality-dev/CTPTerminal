@@ -40,19 +40,24 @@ void IStrategy::OnOrderCallback(const Order& order)
 	}
 
 	if (order.status == Status_Error || order.status == Status_Canceled) {
-		if (order.volume_remained > 0) {
-			Order remain_order = order;
-			if (order.offset_flag == OffsetFlag::Open) {}
-			else {
-				int volume = order.direction == Direction::Sell ? HasBuyPosition(order.instrument_id) : HasSellPosition(order.instrument_id);
-				remain_order.volume_remained = order.volume_remained > volume ? volume : order.volume_remained;
-			}
+		// 如果策略发出去的单子，需要补单
+		int order_ref = order.GetKey().order_ref;
+		auto it_key = order_ref2key_.find(order_ref);
+		if (it_key != order_ref2key_.end()) {
+			if (order.volume_remained > 0) {
+				Order remain_order = order;
+				if (order.offset_flag == OffsetFlag::Open) {}
+				else {
+					int volume = order.direction == Direction::Sell ? HasBuyPosition(order.instrument_id) : HasSellPosition(order.instrument_id);
+					remain_order.volume_remained = order.volume_remained > volume ? volume : order.volume_remained;
+				}
 
-			if (remain_order.volume_remained > 0) {
-				// 如果市场价报单之后2秒(MaxMarketOrderTimeout)之前未成交或者部分成交，
-				// 自动会被撤单，剩下的重新报单。
-				int ret = InsertMarketOrder(remain_order.instrument_id, remain_order.offset_flag, remain_order.direction, remain_order.volume_remained);
-				std::cout << "InsertMarektOrder : " << ret << std::endl;
+				if (remain_order.volume_remained > 0) {
+					// 如果市场价报单之后2秒(MaxMarketOrderTimeout)之前未成交或者部分成交，
+					// 自动会被撤单，剩下的重新报单。
+					int ret = InsertMarketOrder(remain_order.instrument_id, remain_order.offset_flag, remain_order.direction, remain_order.volume_remained);
+					std::cout << "InsertMarektOrder : " << ret << std::endl;
+				}
 			}
 		}
 	}
@@ -119,7 +124,7 @@ int IStrategy::InsertMarketOrder(const std::string& instrument_id, OffsetFlag of
 	order_insert.offset_flag = offset_flag;
 	order_insert.direction = direction;
 	order_insert.is_market_order = false;
-	order_insert.limit_price = data_center()->GetMarketPrice(instrument_id, direction);
+	order_insert.limit_price = data_center()->GetMarketPrice(instrument_id, direction, price_offset_);
 	order_insert.volume = volume;
 	order_insert.order_ref = ++order_ref_;
 
