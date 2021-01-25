@@ -346,7 +346,7 @@ bool FrontSession::operator<(const FrontSession& ov) const
 
 bool OrderKey::operator<(const OrderKey& ov) const
 {
-	return order_ref < ov.order_ref || FrontSession::operator<(ov);
+	return order_ref < ov.order_ref || (order_ref == ov.order_ref && FrontSession::operator<(ov));
 }
 
 Order::Order()
@@ -473,7 +473,7 @@ Position::Position(const std::string& instrument_id, Direction direction)
 bool Position::operator<(const Position& position) const
 {
 	return instrument_id < position.instrument_id ||
-		direction < position.direction;
+		(instrument_id == position.instrument_id && direction < position.direction);
 }
 
 PositionDetail::PositionDetail(const CThostFtdcInvestorPositionDetailField& field)

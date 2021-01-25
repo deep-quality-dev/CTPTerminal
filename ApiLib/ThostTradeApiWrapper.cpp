@@ -460,6 +460,10 @@ int CThostTradeApiWrapper::ReqCancelOrder(const Order& order)
 	field.FrontID = front_id();
 	field.SessionID = session_id();
 	Utils::safe_strcpy(field.OrderSysID, order.order_sys_id.c_str(), sizeof(TThostFtdcOrderSysIDType));
+	if (data_center_) {
+		Instrument instrument = data_center_->GetInstrument(order.instrument_id);
+		GetFromTickplusExchangeID(field.ExchangeID, instrument.exchange_id);
+	}
 	field.RequestID = GetRequestId();
 	int ret = trader_api_->ReqOrderAction(&field, field.RequestID);
 	return ret < 0 ? ret : field.RequestID;
@@ -566,9 +570,9 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 
 		front_id_ = f->FrontID;
 		session_id_ = f->SessionID;
-		order_ref_ = atoi(f->MaxOrderRef);
+		order_ref_ = atoi(f->MaxOrderRef) + 1;
 		if (data_center_) {
-			data_center_->set_order_ref(order_ref_);
+			data_center_->set_init_order_ref(order_ref_);
 		}
 
 		logined_ = true;
@@ -580,7 +584,7 @@ void CThostTradeApiWrapper::OnRspUserLogin(CThostSpiMessage* msg)
 		if (!login_times_) { // 第一次登录
 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQrySettlementInfoConfirm, this), "查询结算信息");
 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryAllInstrument, this), "查询合约");
-// 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryOrder, this), "查询委托");
+ 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryOrder, this), "查询委托");
 // 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryTrade, this), "查询成交");
 //			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPosition, this), "查询持仓");
 			qry_manager_->AddQuery(std::bind(&CThostTradeApiWrapper::ReqQryPositionDetail, this), "查询持仓明细");
@@ -752,11 +756,6 @@ void CThostTradeApiWrapper::OnRspQryOrder(CThostSpiMessage* msg)
 	if (f) {
 		Order order(*f);
 		orders_cache_.insert(order);
-
-		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_QryOrderSuccess,
-				("查询报单列表成功, " + order.instrument_id).c_str());
-		}
 	}
 
 	if (msg->is_last()) {
@@ -766,6 +765,10 @@ void CThostTradeApiWrapper::OnRspQryOrder(CThostSpiMessage* msg)
 
 		if (gui_action_) {
 			gui_action_->RefreshOrders(orders_cache_);
+		}
+
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryOrderSuccess, "查询报单列表成功");
 		}
 		orders_cache_.clear();
 	}
@@ -786,11 +789,6 @@ void CThostTradeApiWrapper::OnRspQryTrade(CThostSpiMessage* msg)
 	if (f) {
 		Trade trade(*f);
 		trades_cache_.insert(trade);
-
-		if (gui_action_) {
-			gui_action_->OnLoginProcess(ApiEvent_QryTradeSuccess,
-				("查询成交列表成功, " + trade.instrument_id).c_str());
-		}
 	}
 
 	if (msg->is_last()) {
@@ -800,6 +798,10 @@ void CThostTradeApiWrapper::OnRspQryTrade(CThostSpiMessage* msg)
 
 		if (gui_action_) {
 			gui_action_->RefreshTrades(trades_cache_);
+		}
+
+		if (gui_action_) {
+			gui_action_->OnLoginProcess(ApiEvent_QryTradeSuccess, "查询成交列表成功");
 		}
 		trades_cache_.clear();
 	}

@@ -19,7 +19,7 @@ CArbitrageStrategy::~CArbitrageStrategy()
 
 void CArbitrageStrategy::Initialize()
 {
-	order_ref_ = data_center()->order_ref();
+	order_ref_ = data_center()->init_order_ref();
 
 	REGISTER_OPEN_SIGNAL_FUNC(Direction::Buy, "MA上穿现价", MABuyCross, main_instrument_id(), sub_instrument_id(), ma_period(), 0, 0);
 	REGISTER_OPEN_SIGNAL_FUNC(Direction::Sell, "MA下穿现价", MASellCross, main_instrument_id(), sub_instrument_id(), ma_period(), 0, 0);
@@ -30,6 +30,8 @@ void CArbitrageStrategy::Initialize()
 
 void CArbitrageStrategy::OnQuoteCallback(const Quote& quote)
 {
+	IStrategy::OnQuoteCallback(quote);
+
 	if (!PushQuote(quote)) {
 		return;
 	}
@@ -81,14 +83,19 @@ void CArbitrageStrategy::OnQuoteCallback(const Quote& quote)
 	}
 }
 
+void CArbitrageStrategy::OnOrderCallback(const Order& order)
+{
+	IStrategy::OnOrderCallback(order);
+}
+
 void CArbitrageStrategy::OnTradeCallback(int order_ref, const Trade& trade)
 {
-
+	IStrategy::OnTradeCallback(order_ref, trade);
 }
 
 void CArbitrageStrategy::OnTradeAccountCallback(const TradingAccount& account)
 {
-
+	IStrategy::OnTradeAccountCallback(account);
 }
 
 bool CArbitrageStrategy::PushQuote(const Quote& quote)

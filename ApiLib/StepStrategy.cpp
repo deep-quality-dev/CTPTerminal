@@ -22,7 +22,7 @@ CStepStrategy::~CStepStrategy()
 
 void CStepStrategy::Initialize()
 {
-	order_ref_ = data_center()->order_ref();
+	order_ref_ = data_center()->init_order_ref();
 
 	REGISTER_OPEN_SIGNAL_FUNC(Direction::Buy, "MA上穿现价", MABuyCross, main_instrument_id(), sub_instrument_id(), ma_period(), 0, 0);
 	REGISTER_OPEN_SIGNAL_FUNC(Direction::Sell, "MA下穿现价", MASellCross, main_instrument_id(), sub_instrument_id(), ma_period(), 0, 0);
@@ -61,6 +61,8 @@ void CStepStrategy::CheckForceSettle()
 
 void CStepStrategy::OnQuoteCallback(const Quote& quote)
 {
+	IStrategy::OnQuoteCallback(quote);
+
 	if (!PushQuote(quote)) {
 		return;
 	}
@@ -141,6 +143,8 @@ void CStepStrategy::OnQuoteCallback(const Quote& quote)
 
 void CStepStrategy::OnOrderCallback(const Order& order)
 {
+	IStrategy::OnOrderCallback(order);
+
 	if (order.status == Status_Error || order.status == Status_Canceled) {
 		int order_ref = order.GetKey().order_ref;
 		auto it = pending_order_refs_.find(order_ref);
@@ -152,6 +156,8 @@ void CStepStrategy::OnOrderCallback(const Order& order)
 
 void CStepStrategy::OnTradeCallback(int order_ref, const Trade& trade)
 {
+	IStrategy::OnTradeCallback(order_ref, trade);
+
 	auto it = pending_order_refs_.find(order_ref);
 	if (it != pending_order_refs_.end()) {
 		pending_order_refs_.erase(order_ref);

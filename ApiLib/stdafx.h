@@ -15,4 +15,5 @@
 #include <windows.h>
 #include <tchar.h>
 #include <set>
+#include <iostream>
 #include "Utils/Fault.h"

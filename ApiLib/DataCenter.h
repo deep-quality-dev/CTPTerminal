@@ -28,11 +28,11 @@ public:
 		return position_details_;
 	}
 
-	int order_ref() {
-		return order_ref_;
+	int init_order_ref() {
+		return init_order_ref_;
 	}
-	void set_order_ref(int order_ref) {
-		order_ref_ = order_ref;
+	void set_init_order_ref(int order_ref) {
+		init_order_ref_ = order_ref;
 	}
 
 	typedef std::function<void(const Quote&)> OnQuoteCallback;
@@ -47,11 +47,16 @@ public:
 	void SetOnTradeCallback(const OnTradeCallback& callback) {
 		ontrade_callback_ = callback;
 	}
+	typedef std::function<void(const std::set<Order>&)> OnQryOrderCallback;
+	void SetOnQryOrderCallback(const OnQryOrderCallback& callback) {
+		onqryorder_callback_ = callback;
+	}
 	typedef std::function<void(const TradingAccount&)> OnTradeAccountCallback;
 	void SetOnTradeAccountCallback(const OnTradeAccountCallback& callback) {
 		onaccount_callback_ = callback;
 	}
 
+	Instrument GetInstrument(const std::string& instrument_id);
 	double GetMarketPrice(const std::string& instrument_id, Direction direction);
 
 	virtual void OnRtnInstruments(const std::set<Instrument>& instruments);
@@ -76,6 +81,7 @@ protected:
 	OnQuoteCallback quote_callback_;
 	OnOrderCallback onorder_callback_;
 	OnTradeCallback ontrade_callback_;
+	OnQryOrderCallback onqryorder_callback_;
 	OnTradeAccountCallback onaccount_callback_;
 
 	std::set<Instrument> instruments_;
@@ -88,7 +94,7 @@ protected:
 	std::map<int, Order> order_ref2order_;
 	std::map<std::string, int> order_sysid2ref_;
 
-	int order_ref_;
+	int init_order_ref_;
 
 	__time64_t server_time_;
 

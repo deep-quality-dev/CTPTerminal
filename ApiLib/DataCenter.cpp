@@ -9,7 +9,7 @@
 
 CDataCenter::CDataCenter() : gui_action_(NULL)
 {
-	order_ref_ = 0;
+	init_order_ref_ = 0;
 
 	Utils::CreateDirectory(Utils::GetRelativePath("quote").c_str());
 }
@@ -105,7 +105,7 @@ void CDataCenter::OnRspTradeAccount(const TradingAccount& account)
 std::set<Position> CDataCenter::OnRtnPositions(const std::set<Position>& positions)
 {
 	{
-		std::unique_lock<std::mutex> lk(mutex_positions_);
+		std::lock_guard<std::mutex> lk(mutex_positions_);
 		positions_ = positions;
 	}
 
@@ -117,7 +117,7 @@ std::set<Position> CDataCenter::OnRtnPositions(const std::set<Position>& positio
 std::set<PositionDetail> CDataCenter::OnRtnPositionDetails(const std::set<PositionDetail>& positions)
 {
 	{
-		std::unique_lock<std::mutex> lk(mutex_positions_);
+		std::lock_guard<std::mutex> lk(mutex_positions_);
 		position_details_ = positions;
 	}
 	// TODO, 从持仓明细合计持仓
@@ -129,7 +129,9 @@ std::set<PositionDetail> CDataCenter::OnRtnPositionDetails(const std::set<Positi
 
 void CDataCenter::OnRspQryOrders(const std::set<Order>& orders)
 {
-
+	if (onqryorder_callback_) {
+		onqryorder_callback_(orders);
+	}
 }
 
 void CDataCenter::OnRspQryTrades(const std::set<Trade>& orders)
@@ -141,6 +143,7 @@ void CDataCenter::OnRtnOrder(const Order& order)
 {
 	order_ref2order_[order.GetKey().order_ref] = order;
 	order_sysid2ref_[order.order_sys_id] = order.GetKey().order_ref;
+
 	if (order.status == Status_Error || order.status == Status_Canceled) {
 		if (order.offset_flag != Open) {
 // 			// 如果正在等待报单回报，TODO
@@ -238,6 +241,9 @@ void CDataCenter::OnRtnTrade(const Trade& trade)
 			}
 		}
 	}
+	else { // 如果OnRtnOrder之前收到OnRtnTrade,
+		// TODO
+	}
 }
 
 void CDataCenter::SaveQuote(const Quote& quote)
@@ -283,6 +289,16 @@ void CDataCenter::SaveQuote(const Quote& quote)
 	Utils::SaveFile(Utils::GetRelativePath(ss.str().c_str()), line.str().c_str());
 }
 
+Instrument CDataCenter::GetInstrument(const std::string& instrument_id)
+{
+	for (auto it_inst = instruments_.begin(); it_inst != instruments_.end(); it_inst++) {
+		if (it_inst->instrument_id == instrument_id) {
+			return *it_inst;
+		}
+	}
+	return Instrument(instrument_id);
+}
+
 double CDataCenter::GetMarketPrice(const std::string& instrument_id, Direction direction)
 {
 	auto it_quote = quotes_.find(instrument_id);
@@ -290,15 +306,15 @@ double CDataCenter::GetMarketPrice(const std::string& instrument_id, Direction d
 		it_quote != quotes_.end() &&
 		(it_quote->second[0] || it_quote->second[1])) {
 		Quote* quote = it_quote->second[1] ? it_quote->second[1] : it_quote->second[0];
-		return direction == Sell ? quote->lower_limit_price : quote->upper_limit_price;
-		// return direction == Sell ? quote->bid_price1 : quote->ask_price1;
+		// return direction == Sell ? quote->lower_limit_price : quote->upper_limit_price;
+		return direction == Sell ? quote->bid_price1 : quote->ask_price1;
 	}
 	return 0;
 }
 
 void CDataCenter::CalcPositionProfit()
 {
-	std::unique_lock<std::mutex> lk(mutex_positions_);
+	std::lock_guard<std::mutex> lk(mutex_positions_);
 
 	std::set<Position> positions_bk;
 	for (auto it_position = positions_.begin();

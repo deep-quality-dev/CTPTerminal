@@ -66,6 +66,7 @@ int main()
 	data_center.SetQuoteCallback(std::bind(&CStepStrategy::OnQuoteCallback, &strategy, std::placeholders::_1));
 	data_center.SetOnOrderCallback(std::bind(&CStepStrategy::OnOrderCallback, &strategy, std::placeholders::_1));
 	data_center.SetOnTradeCallback(std::bind(&CStepStrategy::OnTradeCallback, &strategy, std::placeholders::_1, std::placeholders::_2));
+	data_center.SetOnQryOrderCallback(std::bind(&CStepStrategy::OnQryOrderCallback, &strategy, std::placeholders::_1));
 	data_center.SetOnTradeAccountCallback(std::bind(&CStepStrategy::OnTradeAccountCallback, &strategy, std::placeholders::_1));
 
 	strategy.Initialize();
@@ -83,6 +84,8 @@ int main()
 		Utils::Log("6: StartStopTrade");
 		Utils::Log("7: ReqInsertMarketOrder(Open/Buy/1)");
 		Utils::Log("8: ReqInsertMarketOrder(Close/Sell/1)");
+		Utils::Log("9: ReqInsertLimitOrder(Open/Buy)");
+		Utils::Log("10: CancelAllPendingOrders");
 
 		int choose;
 		std::cin >> choose;
@@ -92,7 +95,7 @@ int main()
 			break;
 
 		case 2:
-			//quote_service.trade_api()->ReqQryOrder();
+			quote_service.trade_api()->ReqQryOrder();
 			break;
 
 		case 3:
@@ -145,6 +148,34 @@ int main()
 				Utils::Log("不支持高频繁报单，稍后再报", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
 			}
 			break;
+		}
+
+		case 9:
+		{
+			std::cout << "请输入价格阶段：";
+			int price_offset = 0; std::cin >> price_offset;
+
+			Instrument instrument = data_center.GetInstrument(CConfigParser::main_instrument_id());
+
+			double limit_price = data_center.GetMarketPrice(CConfigParser::main_instrument_id(), Direction::Sell) + price_offset * instrument.price_tick;
+			int order_ref = strategy.InsertOrder(CConfigParser::main_instrument_id(), OffsetFlag::Open, Direction::Sell, limit_price, CConfigParser::volume());
+			if (order_ref > 0) {
+				order_count++;
+			}
+			else if (order_ref == -2) { // 高频繁报单
+				Utils::Log("不支持高频繁报单，稍后再报", false, ENUM_LOG_LEVEL::LOG_LEVEL_ERROR);
+			}
+			break;
+		}
+
+		case 10:
+		{
+			std::map<int, Order> alive_orders = strategy.alive_orders();
+			for (auto it_order = alive_orders.begin(); it_order != alive_orders.end(); it_order++) {
+				Utils::Log(it_order->second.instrument_id + ": " + it_order->second.order_sys_id);
+				strategy.CancelOrder(it_order->second);
+				Sleep(300);
+			}
 		}
 
 		case 0:
