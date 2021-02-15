@@ -59,6 +59,11 @@ Quote CDataCenter::OnRtnQuote(const Quote& squote)
 		}
 	}
 
+	if (quotes_[quote.instrument_id][1]) {
+		if (quotes_[quote.instrument_id][1]->last_time > quote.last_time)
+			return *quotes_[quote.instrument_id][1];
+	}
+
 // 	std::stringstream ss;
 // 	ss << GetTimeString(quote.last_time) << ", "
 // 		<< quote.instrument_id << ", "
